@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# optipng -o7 "image-map.png"
+optipng -o7 -strip all "image-map.png"
 
 # Function to crop an image
 crop_image() {
