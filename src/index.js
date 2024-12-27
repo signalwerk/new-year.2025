@@ -68,7 +68,7 @@ const DEFENSE_TYPES = [
     color: "#2196F3",
     cost: 200,
     damage: 20,
-    health: 150,
+    health: 100,
   },
   {
     id: 2,
@@ -76,7 +76,7 @@ const DEFENSE_TYPES = [
     color: "#9C27B0",
     cost: 300,
     damage: 30,
-    health: 200,
+    health: 100,
   },
 ];
 
@@ -88,7 +88,7 @@ const METEOR_TYPES = [
     color: "#FF9999",
     health: 30,
     speed: 0.05,
-    damageRate: 5,
+    damageRate: 30,
   },
   {
     id: 1,
@@ -96,7 +96,7 @@ const METEOR_TYPES = [
     color: "#FF4444",
     health: 60,
     speed: 0.02,
-    damageRate: 15,
+    damageRate: 50,
   },
   {
     id: 2,
@@ -104,7 +104,7 @@ const METEOR_TYPES = [
     color: "#FF0000",
     health: 90,
     speed: 0.08,
-    damageRate: 30,
+    damageRate: 50,
   },
 ];
 
@@ -255,8 +255,8 @@ class Projectile {
 class Defense {
   constructor(type = null) {
     this.type = type;
-    this.health = type ? type.health : 0; // Initialize health from type
-    this.maxHealth = type ? type.health : 0; // Store max health for percentage calculations
+    this.health = type ? type.health : 0;
+    this.maxHealth = type ? type.health : 0;
     this.projectiles = [];
     this.lastFireTime = 0;
     this.fireRate = 1000;
@@ -294,9 +294,12 @@ class Defense {
 
           // Take damage from meteor using meteor's damage rate
           if (meteor.blockingDefense === this) {
-            const destroyed = this.takeDamage(meteor.type.damageRate / 60); // Assuming 60 FPS
+            const destroyed = this.takeDamage(meteor.type.damageRate / 60);
             if (destroyed) {
               meteor.unblock();
+              this.type = null; // Reset defense when destroyed
+              this.health = 0;
+              this.maxHealth = 0;
             }
           }
         }
