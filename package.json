@@ -5,7 +5,19 @@
   "main": "index.js",
   "scripts": {
     "start": "parcel src/index.html",
+    "clear": "rm -rf ./dist/ && rm -rf .parcel-cache",
+    "build": "npm run clear && npm run build:dev && npm run build:post",
+    "build:dev": "parcel build --target dev",
+    "build:post": "cp -a ./public/. ./dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "targets": {
+    "main": false,
+    "dev": {
+      "source": "src/index.html",
+      "distDir": "./dist/dev/",
+      "publicUrl": "./"
+    }
   },
   "keywords": [],
   "author": "",

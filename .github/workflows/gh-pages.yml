@@ -1,0 +1,49 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[CI SKIP]')"
+    # permissions:
+    #   contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+        # with:
+        #   submodules: 'recursive'
+
+      - name: ⚡ use node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: ⚙️ npm setup
+        run: npm ci
+
+      - name: 🔨 npm build
+        run: npm run build
+
+      - name: 🚀 deploy
+        uses: peaceiris/actions-gh-pages@v4
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
+      # - name: 🏷 update-readme
+      #   run: |
+      #     bash ./ci/update-readme.sh gh-pages
+
+      # - uses: EndBug/add-and-commit@v9
+      #   with:
+      #     message: Update readme [CI SKIP]
+      #     committer_name: GitHub Actions
+      #     committer_email: action@github.com
