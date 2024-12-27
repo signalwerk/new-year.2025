@@ -61,10 +61,16 @@ class Meteor {
     ctx.fill();
 
     if (DEBUG) {
+      // Draw collision circle
+      ctx.strokeStyle = 'rgba(255,0,0,0.3)';
+      ctx.beginPath();
+      ctx.arc(x, this.y, 10, 0, Math.PI * 2);
+      ctx.stroke();
+
       // Draw health
-      ctx.fillStyle = "white";
-      ctx.font = "10px Arial";
-      ctx.textAlign = "center";
+      ctx.fillStyle = 'white';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
       ctx.fillText(`${this.health}`, x, this.y);
     }
   }
@@ -134,10 +140,26 @@ class Projectile {
   }
 
   draw(ctx) {
-    ctx.fillStyle = "yellow";
+    ctx.fillStyle = 'yellow';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
+
+    if (DEBUG) {
+      // Draw collision circle
+      ctx.strokeStyle = 'rgba(255,255,0,0.3)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  checkCollision(meteor) {
+    const meteorX = PADDING_LEFT + meteor.lane * LANE_WIDTH + LANE_WIDTH / 2;
+    const dx = this.x - meteorX;
+    const dy = this.y - meteor.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < (this.size + 10); // 10 is meteor radius
   }
 
   isOffScreen() {
@@ -159,7 +181,7 @@ class Defense {
     return this.type === null;
   }
 
-  update(currentTime, x, y) {
+  update(currentTime, x, y, meteors) {
     if (!this.isEmpty()) {
       // Fire projectile if enough time has passed
       if (currentTime - this.lastFireTime > this.fireRate) {
@@ -167,9 +189,22 @@ class Defense {
         this.lastFireTime = currentTime;
       }
 
-      // Update existing projectiles
-      this.projectiles = this.projectiles.filter((projectile) => {
-        projectile.update(16); // Using fixed deltaTime for simplicity
+      // Update existing projectiles and check collisions
+      this.projectiles = this.projectiles.filter(projectile => {
+        projectile.update(16);
+
+        // Check for collisions with any meteor
+        for (let i = 0; i < meteors.length; i++) {
+          const meteor = meteors[i];
+          if (projectile.checkCollision(meteor)) {
+            const destroyed = meteor.takeDamage(projectile.damage);
+            if (destroyed) {
+              meteors.splice(i, 1);
+            }
+            return false; // Remove projectile
+          }
+        }
+
         return !projectile.isOffScreen();
       });
     }
@@ -293,8 +328,8 @@ class DefenseSpot {
     }
   }
 
-  update(currentTime) {
-    this.defense.update(currentTime, this.x, this.y);
+  update(currentTime, meteors) {
+    this.defense.update(currentTime, this.x, this.y, meteors);
   }
 }
 
@@ -423,7 +458,7 @@ class Game {
 
   startGame() {
     this.gameState = GAME_STATES.PLAYING;
-    this.testMeteor = new Meteor(2); // Now uses default (weakest) meteor type
+    this.meteors = [new Meteor(2)]; // Start with one meteor
     this.currency = INITIAL_CURRENCY;
     this.selectedDefense = null;
 
@@ -504,18 +539,26 @@ class Game {
 
     const currentTime = performance.now();
 
-    // Update all defense spots
+    // Update all defense spots with current meteors
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
-        this.defenseGrid[row][lane].update(currentTime);
+        this.defenseGrid[row][lane].update(currentTime, this.meteors);
       }
     }
 
-    this.testMeteor.update(deltaTime);
+    // Update meteors and check for game over
+    this.meteors = this.meteors.filter((meteor) => {
+      meteor.update(deltaTime);
+      if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
+        this.gameState = GAME_STATES.GAME_OVER;
+        return false;
+      }
+      return true;
+    });
 
-    // Check for game over
-    if (this.testMeteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
-      this.gameState = GAME_STATES.GAME_OVER;
+    // If all meteors are destroyed, spawn a new one (for testing)
+    if (this.meteors.length === 0) {
+      this.meteors.push(new Meteor(Math.floor(Math.random() * LANES)));
     }
   }
 
@@ -549,8 +592,8 @@ class Game {
         );
       });
 
-      // Draw meteor
-      this.testMeteor.draw(this.ctx);
+      // Draw meteors
+      this.meteors.forEach((meteor) => meteor.draw(this.ctx));
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
