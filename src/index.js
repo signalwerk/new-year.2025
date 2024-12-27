@@ -12,6 +12,7 @@ const GAME_AREA_WIDTH = GAME_WIDTH - (PADDING_LEFT + PADDING_RIGHT);
 const GAME_AREA_HEIGHT = GAME_HEIGHT - (PADDING_TOP + PADDING_BOTTOM);
 const LANE_WIDTH = GAME_AREA_WIDTH / LANES; // Width of each lane
 const SPOT_SIZE = LANE_WIDTH; // Defense spots are same width as lanes
+const METEOR_SIZE = LANE_WIDTH * 0.8;
 const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 
 // Add to game constants
@@ -19,8 +20,8 @@ const DEBUG = true; // Toggle for development visualization
 
 const COLORS = {
   BACKGROUND: "#edf1e7",
-  TEXT: "#fff",
-  DEFENSE_OPTION_TEXT: "#fff",
+  TEXT: "#000",
+  DEFENSE_OPTION_TEXT: "#000",
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
   BUTTON: "#444",
   BUTTON_TEXT: "#fff",
@@ -239,8 +240,13 @@ class Meteor {
 
     if (meteorImage) {
       // Draw the image centered at the meteor's position
-      const size = 20; // Adjust size as needed
-      ctx.drawImage(meteorImage, x - size / 2, this.y - size / 2, size, size);
+      ctx.drawImage(
+        meteorImage,
+        x - METEOR_SIZE / 2,
+        this.y - METEOR_SIZE / 2,
+        METEOR_SIZE,
+        METEOR_SIZE,
+      );
     } else {
       // Fallback to original circle drawing if image isn't loaded
       ctx.fillStyle = this.type.color;
