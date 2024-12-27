@@ -35,6 +35,42 @@ class Meteor {
     }
 }
 
+// Add to existing constants
+class Button {
+    constructor(x, y, width, height, text, backgroundColor = '#444', textColor = 'white', fontSize = 16) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.text = text;
+        this.backgroundColor = backgroundColor;
+        this.textColor = textColor;
+        this.fontSize = fontSize;
+    }
+
+    isClicked(clickX, clickY) {
+        return clickX >= this.x && clickX <= this.x + this.width &&
+               clickY >= this.y && clickY <= this.y + this.height;
+    }
+
+    draw(ctx) {
+        // Draw button background
+        ctx.fillStyle = this.backgroundColor;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        // Draw button text
+        ctx.fillStyle = this.textColor;
+        ctx.font = `${this.fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+            this.text, 
+            this.x + this.width / 2, 
+            this.y + this.height / 2
+        );
+    }
+}
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('canvas');
@@ -55,6 +91,25 @@ class Game {
         // Add game state and button handling
         this.gameState = GAME_STATES.MENU;
         this.setupEventListeners();
+        
+        // Create buttons
+        const buttonWidth = 100;
+        const buttonHeight = 50;
+        const buttonX = GAME_WIDTH / 2 - buttonWidth / 2;
+        const buttonY = GAME_HEIGHT / 2 - buttonHeight / 2;
+        
+        this.startButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight, 'Start Game');
+        this.retryButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight, 'Try Again');
+        this.gameOverText = new Button(
+            GAME_WIDTH / 2 - 100, 
+            GAME_HEIGHT / 2 - 100, 
+            200, 
+            50, 
+            'Game Over!', 
+            'transparent', 
+            'red', 
+            24
+        );
     }
 
     initializeCanvas() {
@@ -87,24 +142,15 @@ class Game {
             const y = (e.clientY - rect.top) * scale;
 
             if (this.gameState === GAME_STATES.MENU) {
-                // Check if click is on start button
-                if (this.isClickOnButton(x, y)) {
+                if (this.startButton.isClicked(x, y)) {
                     this.startGame();
                 }
             } else if (this.gameState === GAME_STATES.GAME_OVER) {
-                // Check if click is on retry button
-                if (this.isClickOnButton(x, y)) {
+                if (this.retryButton.isClicked(x, y)) {
                     this.startGame();
                 }
             }
         });
-    }
-
-    isClickOnButton(x, y) {
-        const buttonX = GAME_WIDTH / 2 - 50;
-        const buttonY = GAME_HEIGHT / 2 - 25;
-        return x >= buttonX && x <= buttonX + 100 &&
-               y >= buttonY && y <= buttonY + 50;
     }
 
     startGame() {
@@ -175,39 +221,13 @@ class Game {
         this.drawBackground();
 
         if (this.gameState === GAME_STATES.MENU) {
-            this.drawButton('Start Game');
+            this.startButton.draw(this.ctx);
         } else if (this.gameState === GAME_STATES.PLAYING) {
             this.testMeteor.draw(this.ctx, this.laneWidth, PADDING_LEFT);
         } else if (this.gameState === GAME_STATES.GAME_OVER) {
-            this.drawButton('Try Again');
-            this.drawGameOver();
+            this.gameOverText.draw(this.ctx);
+            this.retryButton.draw(this.ctx);
         }
-    }
-
-    drawButton(text) {
-        const buttonWidth = 100;
-        const buttonHeight = 50;
-        const x = GAME_WIDTH / 2 - buttonWidth / 2;
-        const y = GAME_HEIGHT / 2 - buttonHeight / 2;
-
-        // Draw button background
-        this.ctx.fillStyle = '#444';
-        this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
-
-        // Draw button text
-        this.ctx.fillStyle = 'white';
-        this.ctx.font = '16px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(text, GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    }
-
-    drawGameOver() {
-        this.ctx.fillStyle = 'red';
-        this.ctx.font = '24px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText('Game Over!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
     }
 }
 
