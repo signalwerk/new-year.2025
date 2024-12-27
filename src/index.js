@@ -196,9 +196,9 @@ const FONT = {
 // Add at the top of the file, after other constants
 const ASSETS = {
   METEORS: [
-    "./assets/img/meteor-1.png",
-    "./assets/img/meteor-2.png",
-    "./assets/img/meteor-3.png",
+    "/assets/img/meteor-1.png",
+    "/assets/img/meteor-2.png",
+    "/assets/img/meteor-3.png",
   ],
 };
 
