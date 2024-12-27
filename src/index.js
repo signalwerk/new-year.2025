@@ -260,6 +260,7 @@ class Defense {
     this.projectiles = [];
     this.lastFireTime = 0;
     this.fireRate = 1000;
+    this.blockingMeteors = []; // Add array to track blocked meteors
   }
 
   isEmpty() {
@@ -290,13 +291,16 @@ class Defense {
           // Block meteor if not already blocked
           if (!meteor.isBlocked) {
             meteor.block(this);
+            this.blockingMeteors.push(meteor); // Track this meteor
           }
 
           // Take damage from meteor using meteor's damage rate
           if (meteor.blockingDefense === this) {
             const destroyed = this.takeDamage(meteor.type.damageRate / 60);
             if (destroyed) {
-              meteor.unblock();
+              // Unblock all meteors this defense was blocking
+              this.blockingMeteors.forEach((m) => m.unblock());
+              this.blockingMeteors = [];
               this.type = null; // Reset defense when destroyed
               this.health = 0;
               this.maxHealth = 0;
