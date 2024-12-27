@@ -24,6 +24,10 @@ const COLORS = {
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
   BUTTON: "#444",
   BUTTON_TEXT: "#fff",
+  PROGRESS_BAR: "#4CAF50",
+  BORDER: "#333",
+  DEBUG_LINE: "#666",
+  DEBUG_TEXT: "#666",
 };
 
 // Add to game constants
@@ -438,7 +442,7 @@ class Defense {
   draw(ctx, x, y, size, isSelected = false, isInactive = false) {
     if (DEBUG) {
       // Draw spot outline
-      ctx.strokeStyle = this.isEmpty() ? "#666" : "#888";
+      ctx.strokeStyle = this.isEmpty() ? COLORS.DEBUG_LINE : "#888";
       ctx.lineWidth = 1;
       ctx.strokeRect(x - size / 2, y - size / 2, size, size);
     }
@@ -459,7 +463,7 @@ class Defense {
 
       if (DEBUG) {
         // Draw health bar
-        ctx.fillStyle = "white";
+        ctx.fillStyle = COLORS.TEXT;
         ctx.font = FONT.SMALL.full;
         ctx.textAlign = "center";
         ctx.fillText(
@@ -554,7 +558,7 @@ class DefenseSpot {
 
     if (DEBUG) {
       // Draw coordinates for debugging
-      ctx.fillStyle = "#666";
+      ctx.fillStyle = COLORS.DEBUG_TEXT;
       ctx.font = FONT.SMALL.full;
       ctx.textAlign = "center";
       ctx.fillText(`${this.lane},${this.row}`, this.x, this.y);
@@ -1053,7 +1057,7 @@ class Game {
   }
 
   drawCurrency() {
-    this.ctx.fillStyle = "white";
+    this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.LARGE.full;
     this.ctx.textAlign = "left";
     this.ctx.fillText(
@@ -1160,15 +1164,15 @@ class Game {
 
     // Progress (inverted to show remaining time)
     const progress = 1 - this.levelManager.getLevelProgress();
-    ctx.fillStyle = progress < 0.2 ? "#ff4444" : "#4CAF50"; // Red when low on time
+    ctx.fillStyle = progress < 0.2 ? "#ff4444" : COLORS.PROGRESS_BAR;
     ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     // Border
-    ctx.strokeStyle = "white";
+    ctx.strokeStyle = COLORS.BORDER;
     ctx.strokeRect(x, y, barWidth, barHeight);
 
     // Level text
-    ctx.fillStyle = "white";
+    ctx.fillStyle = COLORS.TEXT;
     ctx.font = FONT.LARGE.full;
     ctx.textAlign = "center";
     ctx.fillText(
@@ -1209,7 +1213,7 @@ class Game {
     const y = GAME_HEIGHT / 2;
 
     // Background
-    this.ctx.fillStyle = "#333";
+    this.ctx.fillStyle = COLORS.BUTTON;
     this.ctx.fillRect(x, y, barWidth, barHeight);
 
     // Progress
@@ -1217,11 +1221,11 @@ class Game {
     this.ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     // Border
-    this.ctx.strokeStyle = "white";
+    this.ctx.strokeStyle = COLORS.TEXT;
     this.ctx.strokeRect(x, y, barWidth, barHeight);
 
     // Loading text
-    this.ctx.fillStyle = "white";
+    this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.LARGE.full;
     this.ctx.textAlign = "center";
     this.ctx.fillText("Loading...", GAME_WIDTH / 2, y - 20);
