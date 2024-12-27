@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #979797;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.content {
+    &__inner {
+        canvas {
+            display: block;
+            background: #111;
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "new-year.2025",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel src/index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "parcel": "^2.13.3"
+  },
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.13.3"
+  }
+}
