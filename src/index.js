@@ -12,11 +12,11 @@ const GAME_AREA_WIDTH = GAME_WIDTH - (PADDING_LEFT + PADDING_RIGHT);
 const GAME_AREA_HEIGHT = GAME_HEIGHT - (PADDING_TOP + PADDING_BOTTOM);
 const LANE_WIDTH = GAME_AREA_WIDTH / LANES; // Width of each lane
 const SPOT_SIZE = LANE_WIDTH; // Defense spots are same width as lanes
-const METEOR_SIZE = LANE_WIDTH * 0.8;
+const METEOR_SIZE = LANE_WIDTH * 0.8; // Base size for meteors
 const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 
 // Add to game constants
-const DEBUG = true; // Toggle for development visualization
+const DEBUG = false; // Toggle for development visualization
 
 const COLORS = {
   BACKGROUND: "#edf1e7",
@@ -27,8 +27,9 @@ const COLORS = {
   BUTTON_TEXT: "#fff",
   PROGRESS_BAR: "#4CAF50",
   BORDER: "#333",
-  DEBUG_LINE: "#666",
+  DEBUG_LINE: "rgba(0,0,0,0.1)",
   DEBUG_TEXT: "#666",
+  SELECTION: "rgba(255,80,80,0.7)",
 };
 
 // Add to game constants
@@ -107,6 +108,7 @@ const METEOR_TYPES = [
     rotateRate: 0.001, // Slow rotation
     wiggleRate: 0, // No wiggle
     wiggleAmount: 0,
+    sizeMultiplier: { x: 1.0, y: 1.0 }, // Standard size
   },
   {
     id: 1,
@@ -118,6 +120,7 @@ const METEOR_TYPES = [
     rotateRate: 0, // No rotation
     wiggleRate: 0.003, // Medium wiggle speed
     wiggleAmount: 5, // Wiggle amplitude in pixels
+    sizeMultiplier: { x: 1, y: 2 }, // 50% larger
   },
   {
     id: 2,
@@ -129,6 +132,7 @@ const METEOR_TYPES = [
     rotateRate: 0, // Counter-clockwise rotation
     wiggleRate: 0.002, // Slow wiggle
     wiggleAmount: 5, // Large wiggle amplitude
+    sizeMultiplier: { x: 1, y: 2.0 }, // Double size
   },
 ];
 
@@ -270,14 +274,12 @@ class Meteor {
         ctx.rotate(this.rotation);
       }
 
+      // Calculate size using multiplier
+      const height = METEOR_SIZE * this.type.sizeMultiplier.y;
+      const width = METEOR_SIZE * this.type.sizeMultiplier.x;
+
       // Draw the image centered at the translated position
-      ctx.drawImage(
-        meteorImage,
-        -METEOR_SIZE / 2,
-        -METEOR_SIZE / 2,
-        METEOR_SIZE,
-        METEOR_SIZE,
-      );
+      ctx.drawImage(meteorImage, -width / 2, -height / 2, width, height);
 
       ctx.restore(); // Restore context state
     } else {
@@ -479,12 +481,10 @@ class Defense {
   }
 
   draw(ctx, x, y, size, isSelected = false, isInactive = false) {
-    if (DEBUG) {
-      // Draw spot outline
-      ctx.strokeStyle = this.isEmpty() ? COLORS.DEBUG_LINE : "#888";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x - size / 2, y - size / 2, size, size);
-    }
+    // Draw spot outline
+    ctx.strokeStyle = this.isEmpty() ? COLORS.DEBUG_LINE : "#888";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - size / 2, y - size / 2, size, size);
 
     if (!this.isEmpty()) {
       // Draw defense with health-based opacity
@@ -514,8 +514,8 @@ class Defense {
 
       // Draw selection highlight
       if (isSelected) {
-        ctx.strokeStyle = "yellow";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = COLORS.SELECTION;
+        ctx.lineWidth = 4;
         ctx.strokeRect(x - size / 2, y - size / 2, size, size);
       }
     }
@@ -1105,8 +1105,8 @@ class Game {
     this.ctx.textAlign = "left";
     this.ctx.fillText(
       `Currency: $${this.currency}`,
-      PADDING_LEFT,
-      PADDING_TOP / 2,
+      PADDING_LEFT / 3,
+      (PADDING_TOP / 4) * 3,
     );
   }
 
@@ -1207,7 +1207,7 @@ class Game {
 
     // Progress (inverted to show remaining time)
     const progress = 1 - this.levelManager.getLevelProgress();
-    ctx.fillStyle = progress < 0.2 ? "#ff4444" : COLORS.PROGRESS_BAR;
+    ctx.fillStyle = COLORS.PROGRESS_BAR;
     ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     // Border
