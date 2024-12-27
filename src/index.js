@@ -54,9 +54,30 @@ const GAME_STATES = {
 
 // Add to game constants
 const DEFENSE_TYPES = [
-  { id: 0, name: "Basic", color: "#4CAF50", cost: 100, damage: 10 },
-  { id: 1, name: "Medium", color: "#2196F3", cost: 200, damage: 20 },
-  { id: 2, name: "Strong", color: "#9C27B0", cost: 300, damage: 30 },
+  {
+    id: 0,
+    name: "Basic",
+    color: "#4CAF50",
+    cost: 100,
+    damage: 10,
+    health: 100,
+  },
+  {
+    id: 1,
+    name: "Medium",
+    color: "#2196F3",
+    cost: 200,
+    damage: 20,
+    health: 150,
+  },
+  {
+    id: 2,
+    name: "Strong",
+    color: "#9C27B0",
+    cost: 300,
+    damage: 30,
+    health: 200,
+  },
 ];
 
 // Add to game constants
@@ -233,11 +254,12 @@ class Projectile {
 // Add to game constants
 class Defense {
   constructor(type = null) {
-    this.type = type; // null means empty spot
-    this.health = type ? 100 : 0;
+    this.type = type;
+    this.health = type ? type.health : 0; // Initialize health from type
+    this.maxHealth = type ? type.health : 0; // Store max health for percentage calculations
     this.projectiles = [];
     this.lastFireTime = 0;
-    this.fireRate = 1000; // Fire every 1 second
+    this.fireRate = 1000;
   }
 
   isEmpty() {
@@ -319,7 +341,7 @@ class Defense {
       if (isInactive) {
         ctx.globalAlpha = 0.5;
       } else {
-        ctx.globalAlpha = Math.max(0.3, this.health / 100);
+        ctx.globalAlpha = Math.max(0.3, this.health / this.maxHealth);
       }
       ctx.fillRect(x - size / 2, y - size / 2, size, size);
       ctx.globalAlpha = 1.0;
@@ -332,7 +354,11 @@ class Defense {
         ctx.fillStyle = "white";
         ctx.font = "10px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(`${Math.floor(this.health)}%`, x, y);
+        ctx.fillText(
+          `${Math.floor((this.health / this.maxHealth) * 100)}%`,
+          x,
+          y,
+        );
       }
 
       // Draw selection highlight
