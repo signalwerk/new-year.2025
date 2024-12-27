@@ -112,6 +112,71 @@ class DefenseOption {
     }
 }
 
+class DefenseSpot {
+    constructor(x, y, row, lane) {
+        this.x = x;
+        this.y = y;
+        this.row = row;
+        this.lane = lane;
+        this.defense = null; // Will store the placed defense
+    }
+
+    isEmpty() {
+        return this.defense === null;
+    }
+
+    placeDefense(defenseType) {
+        if (this.isEmpty()) {
+            this.defense = {
+                type: defenseType,
+                health: 100,
+                // Add more properties as needed
+            };
+            return true;
+        }
+        return false;
+    }
+
+    removeDefense() {
+        this.defense = null;
+    }
+
+    draw(ctx) {
+        if (DEBUG) {
+            // Draw spot outline
+            ctx.strokeStyle = this.isEmpty() ? '#666' : '#888';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(
+                this.x - SPOT_SIZE/2,
+                this.y - SPOT_SIZE/2,
+                SPOT_SIZE,
+                SPOT_SIZE
+            );
+            
+            // Draw coordinates for debugging
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(
+                `${this.lane},${this.row}`,
+                this.x,
+                this.y
+            );
+        }
+
+        // If there's a defense placed here, draw it
+        if (!this.isEmpty()) {
+            ctx.fillStyle = this.defense.type.color;
+            ctx.fillRect(
+                this.x - SPOT_SIZE/2,
+                this.y - SPOT_SIZE/2,
+                SPOT_SIZE,
+                SPOT_SIZE
+            );
+        }
+    }
+}
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('canvas');
@@ -157,8 +222,8 @@ class Game {
         this.defenseOptions = this.createDefenseOptions();
         this.selectedDefense = null;
         
-        // Calculate defense spots
-        this.defenseSpots = this.calculateDefenseSpots();
+        // Initialize the defense grid
+        this.defenseGrid = this.createDefenseGrid();
     }
 
     initializeCanvas() {
@@ -210,6 +275,18 @@ class Game {
                         }
                     }
                 });
+
+                // Check if grid spot was clicked
+                if (this.selectedDefense) {
+                    const spot = this.getSpotAtPosition(x, y);
+                    if (spot && spot.isEmpty()) {
+                        if (this.currency >= this.selectedDefense.cost) {
+                            spot.placeDefense(this.selectedDefense);
+                            this.currency -= this.selectedDefense.cost;
+                            this.selectedDefense = null;
+                        }
+                    }
+                }
             }
         });
     }
@@ -266,37 +343,11 @@ class Game {
         // Right padding
         this.ctx.fillRect(GAME_WIDTH - PADDING_RIGHT, PADDING_TOP, PADDING_RIGHT, this.gameAreaHeight);
 
-        // Debug: Draw defense spots
-        if (DEBUG) {
-            this.defenseSpots.forEach(spot => {
-                this.ctx.strokeStyle = '#666';
-                this.ctx.lineWidth = 1;
-                
-                // Draw spot circle
-                this.ctx.beginPath();
-                this.ctx.arc(spot.x, spot.y, 5, 0, Math.PI * 2);
-                this.ctx.stroke();
-                
-                // Draw spot grid square
-                this.ctx.strokeRect(
-                    spot.x - this.laneWidth/2,
-                    spot.y - this.laneWidth/2,
-                    this.laneWidth,
-                    this.laneWidth
-                );
-                
-                // Draw coordinates for debugging
-                if (DEBUG) {
-                    this.ctx.fillStyle = '#666';
-                    this.ctx.font = '10px Arial';
-                    this.ctx.textAlign = 'center';
-                    this.ctx.fillText(
-                        `${spot.lane},${spot.row}`,
-                        spot.x,
-                        spot.y
-                    );
-                }
-            });
+        // Draw defense grid
+        for (let row = 0; row < this.defenseGrid.length; row++) {
+            for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
+                this.defenseGrid[row][lane].draw(this.ctx);
+            }
         }
     }
 
@@ -355,22 +406,35 @@ class Game {
         });
     }
 
-    calculateDefenseSpots() {
-        const spots = [];
+    createDefenseGrid() {
+        const grid = [];
         
-        // Start from bottom and work up
+        // Create 2D array for easier position reference
         for (let row = 0; row < GRID_ROWS; row++) {
+            const rowArray = [];
             for (let lane = 0; lane < LANES; lane++) {
-                spots.push({
-                    x: PADDING_LEFT + (lane * this.laneWidth) + (this.laneWidth / 2),
-                    y: GAME_HEIGHT - PADDING_BOTTOM - (row * SPOT_SIZE) - (SPOT_SIZE / 2),
-                    row,
-                    lane
-                });
+                const x = PADDING_LEFT + (lane * SPOT_SIZE) + (SPOT_SIZE / 2);
+                const y = GAME_HEIGHT - PADDING_BOTTOM - (row * SPOT_SIZE) - (SPOT_SIZE / 2);
+                rowArray.push(new DefenseSpot(x, y, row, lane));
             }
+            grid.push(rowArray);
         }
         
-        return spots;
+        return grid;
+    }
+
+    // Helper method to get spot at specific coordinates
+    getSpotAtPosition(x, y) {
+        for (let row = 0; row < this.defenseGrid.length; row++) {
+            for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
+                const spot = this.defenseGrid[row][lane];
+                if (x >= spot.x - SPOT_SIZE/2 && x <= spot.x + SPOT_SIZE/2 &&
+                    y >= spot.y - SPOT_SIZE/2 && y <= spot.y + SPOT_SIZE/2) {
+                    return spot;
+                }
+            }
+        }
+        return null;
     }
 }
 
