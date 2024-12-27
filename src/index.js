@@ -348,25 +348,40 @@ class Coin {
     this.createTime = performance.now();
     this.size = 8;
     
-    // Random velocity for coin movement
+    // Base movement
     const angle = Math.random() * Math.PI * 2;
-    const speed = 0.1 + Math.random() * 0.1;
+    const speed = 0.3 + Math.random() * 0.1;
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
+    
+    // Wave motion parameters
+    this.waveAmplitude = 1 + Math.random() * 2; // Random wave size
+    this.waveFrequency = 0.012 + Math.random() * 0.02; // Random wave frequency
+    this.waveOffset = Math.random() * Math.PI * 2; // Random wave phase
+    this.baseX = x; // Keep track of base position
+    this.baseY = y;
+    this.time = 0;
   }
 
   update(currentTime) {
-    // Update position
-    this.x += this.vx;
-    this.y += this.vy;
+    this.time += 16; // Increment time (assuming ~60fps)
+    
+    // Update base position with velocity
+    this.baseX += this.vx;
+    this.baseY += this.vy;
+    
+    // Add wave motion
+    this.x = this.baseX + Math.sin(this.time * this.waveFrequency + this.waveOffset) * this.waveAmplitude;
+    this.y = this.baseY + Math.cos(this.time * this.waveFrequency + this.waveOffset) * this.waveAmplitude;
 
     // Slow down movement
-    this.vx *= 0.98;
-    this.vy *= 0.98;
+    // this.vx *= 0.98;
+    // this.vy *= 0.98;
+    // this.waveAmplitude *= 0.99; // Gradually reduce wave size
 
     // Calculate remaining lifetime
     const age = currentTime - this.createTime;
-    return age < this.lifetime; // Return false when coin should be removed
+    return age < this.lifetime;
   }
 
   draw(ctx, currentTime) {
@@ -393,7 +408,7 @@ class Coin {
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${this.value}`, this.x, this.y);
+    ctx.fillText(`$${this.value}`, this.x, this.y);
   }
 }
 
