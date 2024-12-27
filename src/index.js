@@ -108,7 +108,7 @@ class Defense {
     return this.type === null;
   }
 
-  draw(ctx, x, y, size, isSelected = false) {
+  draw(ctx, x, y, size, isSelected = false, isInactive = false) {
     if (DEBUG) {
       // Draw spot outline
       ctx.strokeStyle = this.isEmpty() ? "#666" : "#888";
@@ -117,9 +117,13 @@ class Defense {
     }
 
     if (!this.isEmpty()) {
-      // Draw defense square
+      // Draw defense square with opacity if inactive
       ctx.fillStyle = this.type.color;
+      if (isInactive) {
+        ctx.globalAlpha = 0.5;
+      }
       ctx.fillRect(x - size / 2, y - size / 2, size, size);
+      ctx.globalAlpha = 1.0; // Reset opacity
 
       if (DEBUG) {
         // Draw health bar
@@ -147,7 +151,9 @@ class DefenseOption {
     this.defense = new Defense(type);
   }
 
-  draw(ctx, isSelected = false) {
+  draw(ctx, isSelected = false, currentCurrency = 0) {
+    const isInactive = currentCurrency < this.type.cost;
+    
     // Draw defense using Defense class
     this.defense.draw(
       ctx,
@@ -155,16 +161,17 @@ class DefenseOption {
       this.y + SPOT_SIZE / 2,
       SPOT_SIZE,
       isSelected,
+      isInactive
     );
-
-    // Draw cost
-    ctx.fillStyle = "white";
+    
+    // Draw cost (red if can't afford)
+    ctx.fillStyle = isInactive ? "red" : "white";
     ctx.font = "12px Arial";
     ctx.textAlign = "center";
     ctx.fillText(
       `$${this.type.cost}`,
       this.x + SPOT_SIZE / 2,
-      this.y + SPOT_SIZE + 15,
+      this.y + SPOT_SIZE + 15
     );
   }
 
@@ -455,6 +462,7 @@ class Game {
         option.draw(
           this.ctx,
           this.selectedDefense && option.type.id === this.selectedDefense.id,
+          this.currency
         );
       });
 
