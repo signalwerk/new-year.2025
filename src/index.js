@@ -18,7 +18,7 @@ const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 const DEBUG = true; // Toggle for development visualization
 
 const COLORS = {
-  BACKGROUND: "#bfaa9d",
+  BACKGROUND: "#edf1e7",
   TEXT: "#fff",
   DEFENSE_OPTION_TEXT: "#fff",
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
@@ -967,8 +967,12 @@ class Game {
   }
 
   drawBackground() {
+    // Fill entire canvas with background color first
+    this.ctx.fillStyle = COLORS.BACKGROUND;
+    this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
     // Draw game area border
-    this.ctx.strokeStyle = "#333";
+    this.ctx.strokeStyle = COLORS.BORDER;
     this.ctx.strokeRect(
       PADDING_LEFT,
       PADDING_TOP,
@@ -985,7 +989,7 @@ class Game {
       this.ctx.stroke();
     }
 
-    // Draw padding areas (for visualization)
+    // Draw padding areas (slightly darker shade for visual separation)
     this.ctx.fillStyle = COLORS.BACKGROUND;
     // Top padding
     this.ctx.fillRect(0, 0, GAME_WIDTH, PADDING_TOP);
