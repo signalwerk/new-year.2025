@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# optipng -o7 "image-map.png"
+
 # Function to crop an image
 crop_image() {
   local input_image="$1"
@@ -22,3 +24,6 @@ crop_image "image-map.png" "meteor-2.png" 350 150 200 400
 
 # Crop the third image
 crop_image "image-map.png" "meteor-1.png" 550 150 200 200
+
+# optimize images
+optipng -o7 -strip all ./public/assets/img/*
