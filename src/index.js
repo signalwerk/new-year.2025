@@ -23,25 +23,25 @@ const LEVELS = [
     name: "Level 1",
     duration: 30000, // 30 seconds
     waves: [
-      { type: 0, count: 3, startTime: 1000, spacing: 1000 },  // 3 small meteors at 1s
-      { type: 0, count: 5, startTime: 8000, spacing: 800 },   // 5 small meteors at 8s
+      { type: 0, count: 3, startTime: 1000, spacing: 1000 }, // 3 small meteors at 1s
+      { type: 0, count: 5, startTime: 8000, spacing: 800 }, // 5 small meteors at 8s
       { type: 1, count: 2, startTime: 15000, spacing: 2000 }, // 2 medium meteors at 15s
-      { type: 0, count: 4, startTime: 20000, spacing: 500 },  // 4 small meteors at 20s
-      { type: 1, count: 3, startTime: 25000, spacing: 1500 }  // 3 medium meteors at 25s
-    ]
+      { type: 0, count: 4, startTime: 20000, spacing: 500 }, // 4 small meteors at 20s
+      { type: 1, count: 3, startTime: 25000, spacing: 1500 }, // 3 medium meteors at 25s
+    ],
   },
   {
     name: "Level 2",
     duration: 45000, // 45 seconds
     waves: [
-      { type: 1, count: 3, startTime: 2000, spacing: 1200 },  // 3 medium meteors at 2s
-      { type: 0, count: 6, startTime: 10000, spacing: 400 },  // 6 small meteors at 10s
-      { type: 2, count: 1, startTime: 18000, spacing: 0 },    // 1 large meteor at 18s
+      { type: 1, count: 3, startTime: 2000, spacing: 1200 }, // 3 medium meteors at 2s
+      { type: 0, count: 6, startTime: 10000, spacing: 400 }, // 6 small meteors at 10s
+      { type: 2, count: 1, startTime: 18000, spacing: 0 }, // 1 large meteor at 18s
       { type: 1, count: 4, startTime: 25000, spacing: 1000 }, // 4 medium meteors at 25s
       { type: 2, count: 2, startTime: 35000, spacing: 2000 }, // 2 large meteors at 35s
-      { type: 0, count: 8, startTime: 40000, spacing: 300 }   // 8 small meteors at 40s
-    ]
-  }
+      { type: 0, count: 8, startTime: 40000, spacing: 300 }, // 8 small meteors at 40s
+    ],
+  },
 ];
 
 const GAME_STATES = {
@@ -474,22 +474,22 @@ class LevelManager {
     this.currentLevel = levelIndex;
     this.levelStartTime = performance.now();
     this.waveStates = new Map();
-    
+
     // Initialize wave states
     LEVELS[levelIndex].waves.forEach((wave, index) => {
       this.waveStates.set(index, {
         meteorsSpawned: 0,
-        nextSpawnTime: wave.startTime
+        nextSpawnTime: wave.startTime,
       });
     });
   }
 
   update(currentTime, meteors) {
     if (this.currentLevel >= LEVELS.length) return false;
-    
+
     const level = LEVELS[this.currentLevel];
     const levelTime = currentTime - this.levelStartTime;
-    
+
     // Check if level time is exceeded
     if (levelTime >= level.duration) {
       return false;
@@ -498,13 +498,18 @@ class LevelManager {
     // Update each wave
     level.waves.forEach((wave, waveIndex) => {
       const state = this.waveStates.get(waveIndex);
-      
-      if (levelTime >= state.nextSpawnTime && state.meteorsSpawned < wave.count) {
-        meteors.push(new Meteor(
-          Math.floor(Math.random() * LANES),
-          METEOR_TYPES[wave.type]
-        ));
-        
+
+      if (
+        levelTime >= state.nextSpawnTime &&
+        state.meteorsSpawned < wave.count
+      ) {
+        meteors.push(
+          new Meteor(
+            Math.floor(Math.random() * LANES),
+            METEOR_TYPES[wave.type],
+          ),
+        );
+
         state.meteorsSpawned++;
         state.nextSpawnTime = levelTime + wave.spacing;
       }
@@ -520,7 +525,10 @@ class LevelManager {
   }
 
   isLevelComplete() {
-    return (performance.now() - this.levelStartTime) >= LEVELS[this.currentLevel].duration;
+    return (
+      performance.now() - this.levelStartTime >=
+      LEVELS[this.currentLevel].duration
+    );
   }
 }
 
@@ -863,6 +871,9 @@ class Game {
       // Draw currency
       this.drawCurrency();
 
+      // Draw progress bar
+      this.drawProgressBar(this.ctx);
+
       // Draw defense options
       this.defenseOptions.forEach((option) => {
         option.draw(
@@ -939,41 +950,38 @@ class Game {
     const barHeight = 20;
     const x = 50; // Padding from left
     const y = 20; // Padding from top
-    
+
     // Background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
     ctx.fillRect(x, y, barWidth, barHeight);
-    
+
     // Progress
     const progress = this.levelManager.getLevelProgress();
-    ctx.fillStyle = '#4CAF50';
+    ctx.fillStyle = "#4CAF50";
     ctx.fillRect(x, y, barWidth * progress, barHeight);
-    
+
     // Border
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = "white";
     ctx.strokeRect(x, y, barWidth, barHeight);
-    
+
     // Level text
-    ctx.fillStyle = 'white';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
+    ctx.fillStyle = "white";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
     ctx.fillText(
       `${LEVELS[this.levelManager.currentLevel].name}`,
       GAME_WIDTH / 2,
-      y + barHeight + 16
+      y + barHeight + 16,
     );
-    
+
     // Time remaining
     const timeLeft = Math.ceil(
-      (LEVELS[this.levelManager.currentLevel].duration - 
-      (performance.now() - this.levelManager.levelStartTime)) / 1000
+      (LEVELS[this.levelManager.currentLevel].duration -
+        (performance.now() - this.levelManager.levelStartTime)) /
+        1000,
     );
     if (timeLeft > 0) {
-      ctx.fillText(
-        `${timeLeft}s`,
-        GAME_WIDTH - 30,
-        y + barHeight/2 + 5
-      );
+      ctx.fillText(`${timeLeft}s`, GAME_WIDTH - 30, y + barHeight / 2 + 5);
     }
   }
 }
