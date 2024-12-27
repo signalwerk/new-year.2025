@@ -21,25 +21,27 @@ const DEBUG = true; // Toggle for development visualization
 const LEVELS = [
   {
     name: "Level 1",
+    duration: 30000, // 30 seconds
     waves: [
-      { type: 0, count: 3, delay: 2000, spacing: 1000 }, // 3 small meteors
-      { type: 0, count: 5, delay: 5000, spacing: 800 }, // 5 small meteors faster
-      { type: 1, count: 2, delay: 3000, spacing: 2000 }, // 2 medium meteors
-      { type: 0, count: 4, delay: 2000, spacing: 500 }, // 4 small meteors very fast
-      { type: 1, count: 3, delay: 3000, spacing: 1500 }, // Final wave: 3 medium meteors
-    ],
+      { type: 0, count: 3, startTime: 1000, spacing: 1000 },  // 3 small meteors at 1s
+      { type: 0, count: 5, startTime: 8000, spacing: 800 },   // 5 small meteors at 8s
+      { type: 1, count: 2, startTime: 15000, spacing: 2000 }, // 2 medium meteors at 15s
+      { type: 0, count: 4, startTime: 20000, spacing: 500 },  // 4 small meteors at 20s
+      { type: 1, count: 3, startTime: 25000, spacing: 1500 }  // 3 medium meteors at 25s
+    ]
   },
   {
     name: "Level 2",
+    duration: 45000, // 45 seconds
     waves: [
-      { type: 1, count: 3, delay: 2000, spacing: 1200 }, // 3 medium meteors
-      { type: 0, count: 6, delay: 3000, spacing: 400 }, // 6 small meteors fast
-      { type: 2, count: 1, delay: 4000, spacing: 0 }, // 1 large meteor
-      { type: 1, count: 4, delay: 2000, spacing: 1000 }, // 4 medium meteors
-      { type: 2, count: 2, delay: 5000, spacing: 2000 }, // 2 large meteors
-      { type: 0, count: 8, delay: 2000, spacing: 300 }, // Final wave: 8 small meteors
-    ],
-  },
+      { type: 1, count: 3, startTime: 2000, spacing: 1200 },  // 3 medium meteors at 2s
+      { type: 0, count: 6, startTime: 10000, spacing: 400 },  // 6 small meteors at 10s
+      { type: 2, count: 1, startTime: 18000, spacing: 0 },    // 1 large meteor at 18s
+      { type: 1, count: 4, startTime: 25000, spacing: 1000 }, // 4 medium meteors at 25s
+      { type: 2, count: 2, startTime: 35000, spacing: 2000 }, // 2 large meteors at 35s
+      { type: 0, count: 8, startTime: 40000, spacing: 300 }   // 8 small meteors at 40s
+    ]
+  }
 ];
 
 const GAME_STATES = {
@@ -464,72 +466,61 @@ class Coin {
 class LevelManager {
   constructor() {
     this.currentLevel = 0;
-    this.currentWave = 0;
-    this.meteorsInWave = 0;
-    this.nextMeteorTime = 0;
-    this.waveDelay = 0;
-    this.meteorsSpawned = 0;
-    this.totalMeteorsInLevel = 0;
-    this.meteorsDestroyedInLevel = 0;
+    this.levelStartTime = 0;
+    this.waveStates = new Map(); // Track progress of each wave
   }
 
   startLevel(levelIndex) {
     this.currentLevel = levelIndex;
-    this.currentWave = 0;
-    this.meteorsInWave = 0;
-    this.nextMeteorTime = performance.now();
-    this.meteorsSpawned = 0;
-    this.meteorsDestroyedInLevel = 0;
-
-    // Calculate total meteors in level
-    this.totalMeteorsInLevel = LEVELS[levelIndex].waves.reduce(
-      (total, wave) => total + wave.count,
-      0,
-    );
+    this.levelStartTime = performance.now();
+    this.waveStates = new Map();
+    
+    // Initialize wave states
+    LEVELS[levelIndex].waves.forEach((wave, index) => {
+      this.waveStates.set(index, {
+        meteorsSpawned: 0,
+        nextSpawnTime: wave.startTime
+      });
+    });
   }
 
   update(currentTime, meteors) {
     if (this.currentLevel >= LEVELS.length) return false;
-
+    
     const level = LEVELS[this.currentLevel];
-    const wave = level.waves[this.currentWave];
-
-    if (!wave) return false;
-
-    if (currentTime >= this.nextMeteorTime && this.meteorsInWave < wave.count) {
-      // Spawn new meteor
-      meteors.push(
-        new Meteor(Math.floor(Math.random() * LANES), METEOR_TYPES[wave.type]),
-      );
-
-      this.meteorsInWave++;
-      this.meteorsSpawned++;
-      this.nextMeteorTime = currentTime + wave.spacing;
-
-      // If wave complete, setup next wave
-      if (this.meteorsInWave >= wave.count) {
-        this.meteorsInWave = 0;
-        this.currentWave++;
-        this.nextMeteorTime = currentTime + wave.delay;
-      }
+    const levelTime = currentTime - this.levelStartTime;
+    
+    // Check if level time is exceeded
+    if (levelTime >= level.duration) {
+      return false;
     }
+
+    // Update each wave
+    level.waves.forEach((wave, waveIndex) => {
+      const state = this.waveStates.get(waveIndex);
+      
+      if (levelTime >= state.nextSpawnTime && state.meteorsSpawned < wave.count) {
+        meteors.push(new Meteor(
+          Math.floor(Math.random() * LANES),
+          METEOR_TYPES[wave.type]
+        ));
+        
+        state.meteorsSpawned++;
+        state.nextSpawnTime = levelTime + wave.spacing;
+      }
+    });
 
     return true;
   }
 
   getLevelProgress() {
-    return this.meteorsDestroyedInLevel / this.totalMeteorsInLevel;
-  }
-
-  meteorDestroyed() {
-    this.meteorsDestroyedInLevel++;
+    const levelTime = performance.now() - this.levelStartTime;
+    const duration = LEVELS[this.currentLevel].duration;
+    return Math.min(levelTime / duration, 1);
   }
 
   isLevelComplete() {
-    return (
-      this.meteorsDestroyedInLevel >= this.totalMeteorsInLevel &&
-      this.meteors.length === 0
-    );
+    return (performance.now() - this.levelStartTime) >= LEVELS[this.currentLevel].duration;
   }
 }
 
@@ -943,29 +934,47 @@ class Game {
   }
 
   drawProgressBar(ctx) {
-    const progress = this.levelManager.getLevelProgress();
-    const barWidth = 200;
+    // Draw progress bar background
+    const barWidth = GAME_WIDTH - 100; // Leave some padding
     const barHeight = 20;
-    const x = GAME_WIDTH / 2 - barWidth / 2;
-    const y = 20;
-
-    // Draw background
-    ctx.fillStyle = "#333";
+    const x = 50; // Padding from left
+    const y = 20; // Padding from top
+    
+    // Background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(x, y, barWidth, barHeight);
-
-    // Draw progress
-    ctx.fillStyle = "#4CAF50";
+    
+    // Progress
+    const progress = this.levelManager.getLevelProgress();
+    ctx.fillStyle = '#4CAF50';
     ctx.fillRect(x, y, barWidth * progress, barHeight);
-
-    // Draw text
-    ctx.fillStyle = "white";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
+    
+    // Border
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(x, y, barWidth, barHeight);
+    
+    // Level text
+    ctx.fillStyle = 'white';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
     ctx.fillText(
-      `Level ${this.levelManager.currentLevel + 1}`,
+      `${LEVELS[this.levelManager.currentLevel].name}`,
       GAME_WIDTH / 2,
-      y + barHeight / 2 + 4,
+      y + barHeight + 16
     );
+    
+    // Time remaining
+    const timeLeft = Math.ceil(
+      (LEVELS[this.levelManager.currentLevel].duration - 
+      (performance.now() - this.levelManager.levelStartTime)) / 1000
+    );
+    if (timeLeft > 0) {
+      ctx.fillText(
+        `${timeLeft}s`,
+        GAME_WIDTH - 30,
+        y + barHeight/2 + 5
+      );
+    }
   }
 }
 
