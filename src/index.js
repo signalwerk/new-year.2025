@@ -467,13 +467,15 @@ class LevelManager {
   constructor() {
     this.currentLevel = 0;
     this.levelStartTime = 0;
-    this.waveStates = new Map(); // Track progress of each wave
+    this.waveStates = new Map();
+    this.allWavesComplete = false;
   }
 
   startLevel(levelIndex) {
     this.currentLevel = levelIndex;
     this.levelStartTime = performance.now();
     this.waveStates = new Map();
+    this.allWavesComplete = false;
 
     // Initialize wave states
     LEVELS[levelIndex].waves.forEach((wave, index) => {
@@ -492,6 +494,7 @@ class LevelManager {
 
     // Check if level time is exceeded
     if (levelTime >= level.duration) {
+      this.allWavesComplete = true;
       return false;
     }
 
@@ -518,17 +521,14 @@ class LevelManager {
     return true;
   }
 
+  isLevelComplete(meteors) {
+    return this.allWavesComplete && meteors.length === 0;
+  }
+
   getLevelProgress() {
     const levelTime = performance.now() - this.levelStartTime;
     const duration = LEVELS[this.currentLevel].duration;
     return Math.min(levelTime / duration, 1);
-  }
-
-  isLevelComplete() {
-    return (
-      performance.now() - this.levelStartTime >=
-      LEVELS[this.currentLevel].duration
-    );
   }
 }
 
@@ -659,6 +659,10 @@ class Game {
         if (this.retryButton.isClicked(x, y)) {
           this.startGame();
         }
+      } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
+        if (this.nextLevelButton.isClicked(x, y)) {
+          this.startNextLevel();
+        }
       } else if (this.gameState === GAME_STATES.PLAYING) {
         // Check for coin collection first
         let coinCollected = false;
@@ -698,10 +702,6 @@ class Game {
               }
             }
           }
-        }
-      } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
-        if (this.nextLevelButton.isClicked(x, y)) {
-          this.startNextLevel();
         }
       }
     });
@@ -809,18 +809,7 @@ class Game {
 
     const currentTime = performance.now();
 
-    // Update level manager
-    if (!this.levelManager.update(currentTime, this.meteors)) {
-      if (this.meteors.length === 0) {
-        if (this.levelManager.currentLevel >= LEVELS.length - 1) {
-          this.gameState = GAME_STATES.GAME_COMPLETE;
-        } else {
-          this.gameState = GAME_STATES.LEVEL_COMPLETE;
-        }
-      }
-    }
-
-    // Update all defense spots with current meteors and coins array
+    // Update all defense spots
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
         this.defenseGrid[row][lane].update(
@@ -844,9 +833,16 @@ class Game {
     // Update coins
     this.coins = this.coins.filter((coin) => coin.update(currentTime));
 
-    // If all meteors are destroyed, spawn a new one (for testing)
-    if (this.meteors.length === 0) {
-      this.meteors.push(new Meteor(Math.floor(Math.random() * LANES)));
+    // Update level manager
+    this.levelManager.update(currentTime, this.meteors);
+
+    // Check for level completion
+    if (this.levelManager.isLevelComplete(this.meteors)) {
+      if (this.levelManager.currentLevel >= LEVELS.length - 1) {
+        this.gameState = GAME_STATES.GAME_COMPLETE;
+      } else {
+        this.gameState = GAME_STATES.LEVEL_COMPLETE;
+      }
     }
   }
 
