@@ -4,7 +4,7 @@ const GAME_HEIGHT = 640; // 16:9 ratio
 const LANES = 6;
 const PADDING_TOP = 80; // More space for score/level
 const PADDING_BOTTOM = 100; // More space for controls/UI
-const PADDING_LEFT = 40;
+const PADDING_LEFT = 80;
 const PADDING_RIGHT = 40;
 
 // Game area calculations
@@ -348,6 +348,7 @@ class Coin {
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
     this.size = 8;
+    this.hitRadius = 20; // Bigger radius for hit detection
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
@@ -356,8 +357,8 @@ class Coin {
     this.vy = Math.sin(angle) * speed;
 
     // Wave motion parameters
-    this.waveAmplitude = 1 + Math.random() * 2; // Random wave size
-    this.waveFrequency = 0.012 + Math.random() * 0.02; // Random wave frequency
+    this.waveAmplitude = 2 + Math.random() * 0.5; // Random wave size
+    this.waveFrequency = 0.005 + Math.random() * 0.01; // Random wave frequency
     this.waveOffset = Math.random() * Math.PI * 2; // Random wave phase
     this.baseX = x; // Keep track of base position
     this.baseY = y;
@@ -404,6 +405,14 @@ class Coin {
       }
     }
 
+    if (DEBUG) {
+      // Draw hit area
+      ctx.strokeStyle = "rgba(255, 215, 0, 0.3)"; // Semi-transparent gold
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.hitRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     // Draw coin
     ctx.fillStyle = "#FFD700"; // Gold color
     ctx.beginPath();
@@ -411,18 +420,18 @@ class Coin {
     ctx.fill();
 
     // Draw value
-    ctx.fillStyle = "white";
+    ctx.fillStyle = "black";
     ctx.font = "10px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(`$${this.value}`, this.x, this.y);
+    ctx.fillText(`$`, this.x, this.y);
   }
 
   isClicked(clickX, clickY) {
     const dx = clickX - this.x;
     const dy = clickY - this.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    return distance < this.size;
+    return distance < this.hitRadius; // Use bigger radius for hit detection
   }
 }
 
