@@ -61,9 +61,30 @@ const DEFENSE_TYPES = [
 
 // Add to game constants
 const METEOR_TYPES = [
-  { id: 0, name: "Small", color: "#FF9999", health: 30, speed: 0.05 },
-  { id: 1, name: "Medium", color: "#FF4444", health: 60, speed: 0.02 },
-  { id: 2, name: "Large", color: "#FF0000", health: 90, speed: 0.08 },
+  {
+    id: 0,
+    name: "Small",
+    color: "#FF9999",
+    health: 30,
+    speed: 0.05,
+    damageRate: 5,
+  },
+  {
+    id: 1,
+    name: "Medium",
+    color: "#FF4444",
+    health: 60,
+    speed: 0.02,
+    damageRate: 15,
+  },
+  {
+    id: 2,
+    name: "Large",
+    color: "#FF0000",
+    health: 90,
+    speed: 0.08,
+    damageRate: 30,
+  },
 ];
 
 // Test meteor
@@ -217,7 +238,6 @@ class Defense {
     this.projectiles = [];
     this.lastFireTime = 0;
     this.fireRate = 1000; // Fire every 1 second
-    this.damageRate = 10; // Damage taken per second from meteor
   }
 
   isEmpty() {
@@ -250,9 +270,9 @@ class Defense {
             meteor.block(this);
           }
 
-          // Take damage from meteor
+          // Take damage from meteor using meteor's damage rate
           if (meteor.blockingDefense === this) {
-            const destroyed = this.takeDamage(this.damageRate / 60); // Assuming 60 FPS
+            const destroyed = this.takeDamage(meteor.type.damageRate / 60); // Assuming 60 FPS
             if (destroyed) {
               meteor.unblock();
             }
