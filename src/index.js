@@ -31,12 +31,22 @@ const DEFENSE_TYPES = [
   { id: 2, name: "Strong", color: "#9C27B0", cost: 300, damage: 30 },
 ];
 
+// Add to game constants
+const METEOR_TYPES = [
+  { id: 0, name: "Small", color: "#FF9999", health: 20, speed: 0.05 },
+  { id: 1, name: "Medium", color: "#FF4444", health: 40, speed: 0.02 },
+  { id: 2, name: "Large", color: "#FF0000", health: 60, speed: 0.08 },
+];
+
 // Test meteor
 class Meteor {
-  constructor(lane) {
+  constructor(lane, type = METEOR_TYPES[0]) {
+    // Default to weakest type
     this.lane = lane;
+    this.type = type;
     this.y = PADDING_TOP;
-    this.speed = 0.1;
+    this.health = type.health;
+    this.speed = type.speed;
   }
 
   update(deltaTime) {
@@ -45,10 +55,23 @@ class Meteor {
 
   draw(ctx) {
     const x = PADDING_LEFT + this.lane * LANE_WIDTH + LANE_WIDTH / 2;
-    ctx.fillStyle = "red";
+    ctx.fillStyle = this.type.color;
     ctx.beginPath();
     ctx.arc(x, this.y, 10, 0, Math.PI * 2);
     ctx.fill();
+
+    if (DEBUG) {
+      // Draw health
+      ctx.fillStyle = "white";
+      ctx.font = "10px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(`${this.health}`, x, this.y);
+    }
+  }
+
+  takeDamage(damage) {
+    this.health -= damage;
+    return this.health <= 0;
   }
 }
 
@@ -97,15 +120,59 @@ class Button {
   }
 }
 
+class Projectile {
+  constructor(x, y, damage) {
+    this.x = x;
+    this.y = y;
+    this.speed = 0.3;
+    this.damage = damage;
+    this.size = 4;
+  }
+
+  update(deltaTime) {
+    this.y -= this.speed * deltaTime;
+  }
+
+  draw(ctx) {
+    ctx.fillStyle = "yellow";
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  isOffScreen() {
+    return this.y < PADDING_TOP;
+  }
+}
+
 // Add to game constants
 class Defense {
   constructor(type = null) {
     this.type = type; // null means empty spot
     this.health = type ? 100 : 0;
+    this.projectiles = [];
+    this.lastFireTime = 0;
+    this.fireRate = 1000; // Fire every 1 second
   }
 
   isEmpty() {
     return this.type === null;
+  }
+
+  update(currentTime, x, y) {
+    if (!this.isEmpty()) {
+      // Fire projectile if enough time has passed
+      if (currentTime - this.lastFireTime > this.fireRate) {
+        this.projectiles.push(new Projectile(x, y, this.type.damage));
+        this.lastFireTime = currentTime;
+      }
+
+      // Update existing projectiles
+      this.projectiles = this.projectiles.filter((projectile) => {
+        projectile.update(16); // Using fixed deltaTime for simplicity
+        return !projectile.isOffScreen();
+      });
+    }
   }
 
   draw(ctx, x, y, size, isSelected = false, isInactive = false) {
@@ -117,13 +184,16 @@ class Defense {
     }
 
     if (!this.isEmpty()) {
-      // Draw defense square with opacity if inactive
+      // Draw defense
       ctx.fillStyle = this.type.color;
       if (isInactive) {
         ctx.globalAlpha = 0.5;
       }
       ctx.fillRect(x - size / 2, y - size / 2, size, size);
-      ctx.globalAlpha = 1.0; // Reset opacity
+      ctx.globalAlpha = 1.0;
+
+      // Draw projectiles
+      this.projectiles.forEach((projectile) => projectile.draw(ctx));
 
       if (DEBUG) {
         // Draw health bar
@@ -153,7 +223,7 @@ class DefenseOption {
 
   draw(ctx, isSelected = false, currentCurrency = 0) {
     const isInactive = currentCurrency < this.type.cost;
-    
+
     // Draw defense using Defense class
     this.defense.draw(
       ctx,
@@ -161,9 +231,9 @@ class DefenseOption {
       this.y + SPOT_SIZE / 2,
       SPOT_SIZE,
       isSelected,
-      isInactive
+      isInactive,
     );
-    
+
     // Draw cost (red if can't afford)
     ctx.fillStyle = isInactive ? "red" : "white";
     ctx.font = "12px Arial";
@@ -171,7 +241,7 @@ class DefenseOption {
     ctx.fillText(
       `$${this.type.cost}`,
       this.x + SPOT_SIZE / 2,
-      this.y + SPOT_SIZE + 15
+      this.y + SPOT_SIZE + 15,
     );
   }
 
@@ -191,7 +261,7 @@ class DefenseSpot {
     this.y = y;
     this.row = row;
     this.lane = lane;
-    this.defense = new Defense(); // Start with empty defense
+    this.defense = new Defense();
   }
 
   isEmpty() {
@@ -221,6 +291,10 @@ class DefenseSpot {
       ctx.textAlign = "center";
       ctx.fillText(`${this.lane},${this.row}`, this.x, this.y);
     }
+  }
+
+  update(currentTime) {
+    this.defense.update(currentTime, this.x, this.y);
   }
 }
 
@@ -349,7 +423,7 @@ class Game {
 
   startGame() {
     this.gameState = GAME_STATES.PLAYING;
-    this.testMeteor = new Meteor(2);
+    this.testMeteor = new Meteor(2); // Now uses default (weakest) meteor type
     this.currency = INITIAL_CURRENCY;
     this.selectedDefense = null;
 
@@ -428,6 +502,15 @@ class Game {
   update(deltaTime) {
     if (this.gameState !== GAME_STATES.PLAYING) return;
 
+    const currentTime = performance.now();
+
+    // Update all defense spots
+    for (let row = 0; row < this.defenseGrid.length; row++) {
+      for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
+        this.defenseGrid[row][lane].update(currentTime);
+      }
+    }
+
     this.testMeteor.update(deltaTime);
 
     // Check for game over
@@ -462,7 +545,7 @@ class Game {
         option.draw(
           this.ctx,
           this.selectedDefense && option.type.id === this.selectedDefense.id,
-          this.currency
+          this.currency,
         );
       });
 
