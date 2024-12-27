@@ -104,6 +104,9 @@ const METEOR_TYPES = [
     health: 30,
     speed: 0.05,
     damageRate: 30,
+    rotateRate: 0.001, // Slow rotation
+    wiggleRate: 0, // No wiggle
+    wiggleAmount: 0,
   },
   {
     id: 1,
@@ -112,6 +115,9 @@ const METEOR_TYPES = [
     health: 60,
     speed: 0.02,
     damageRate: 50,
+    rotateRate: 0, // No rotation
+    wiggleRate: 0.003, // Medium wiggle speed
+    wiggleAmount: 5, // Wiggle amplitude in pixels
   },
   {
     id: 2,
@@ -120,6 +126,9 @@ const METEOR_TYPES = [
     health: 90,
     speed: 0.08,
     damageRate: 50,
+    rotateRate: 0, // Counter-clockwise rotation
+    wiggleRate: 0.002, // Slow wiggle
+    wiggleAmount: 5, // Large wiggle amplitude
   },
 ];
 
@@ -206,19 +215,29 @@ let game; // Global game instance
 // Test meteor
 class Meteor {
   constructor(lane, type = METEOR_TYPES[0]) {
-    // Default to weakest type
     this.lane = lane;
     this.type = type;
     this.y = PADDING_TOP;
     this.health = type.health;
     this.speed = type.speed;
-    this.isBlocked = false; // New property to track if meteor is blocked by defense
-    this.blockingDefense = null; // Reference to blocking defense
+    this.isBlocked = false;
+    this.blockingDefense = null;
+
+    // Add rotation and wiggle properties
+    this.rotation = 0;
+    this.wiggleOffset = 0;
+    this.baseX = PADDING_LEFT + lane * LANE_WIDTH + LANE_WIDTH / 2;
   }
 
   update(deltaTime) {
     if (!this.isBlocked) {
       this.y += this.speed * deltaTime;
+
+      // Update rotation
+      this.rotation += this.type.rotateRate * deltaTime;
+
+      // Update wiggle
+      this.wiggleOffset += this.type.wiggleRate * deltaTime;
     }
   }
 
@@ -233,25 +252,39 @@ class Meteor {
   }
 
   draw(ctx) {
-    const x = PADDING_LEFT + this.lane * LANE_WIDTH + LANE_WIDTH / 2;
+    // Calculate wiggled x position
+    const wiggleX =
+      this.baseX + Math.sin(this.wiggleOffset) * this.type.wiggleAmount;
 
-    // Get the corresponding meteor image from the game instance
+    // Get the corresponding meteor image
     const meteorImage = game?.assetLoader.getImage(`meteor-${this.type.id}`);
 
     if (meteorImage) {
-      // Draw the image centered at the meteor's position
+      ctx.save(); // Save current context state
+
+      // Translate to meteor position
+      ctx.translate(wiggleX, this.y);
+
+      // Rotate if rotation rate exists
+      if (this.type.rotateRate !== 0) {
+        ctx.rotate(this.rotation);
+      }
+
+      // Draw the image centered at the translated position
       ctx.drawImage(
         meteorImage,
-        x - METEOR_SIZE / 2,
-        this.y - METEOR_SIZE / 2,
+        -METEOR_SIZE / 2,
+        -METEOR_SIZE / 2,
         METEOR_SIZE,
         METEOR_SIZE,
       );
+
+      ctx.restore(); // Restore context state
     } else {
       // Fallback to original circle drawing if image isn't loaded
       ctx.fillStyle = this.type.color;
       ctx.beginPath();
-      ctx.arc(x, this.y, 10, 0, Math.PI * 2);
+      ctx.arc(wiggleX, this.y, 10, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -259,14 +292,14 @@ class Meteor {
       // Draw collision circle
       ctx.strokeStyle = "rgba(255,0,0,0.3)";
       ctx.beginPath();
-      ctx.arc(x, this.y, 10, 0, Math.PI * 2);
+      ctx.arc(wiggleX, this.y, 10, 0, Math.PI * 2);
       ctx.stroke();
 
       // Draw health
       ctx.fillStyle = "white";
       ctx.font = FONT.SMALL.full;
       ctx.textAlign = "center";
-      ctx.fillText(`${this.health}`, x, this.y);
+      ctx.fillText(`${this.health}`, wiggleX, this.y);
     }
   }
 
@@ -335,7 +368,7 @@ class Projectile {
   }
 
   draw(ctx) {
-    ctx.fillStyle = "yellow";
+    ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
@@ -646,7 +679,7 @@ class Coin {
 
     if (DEBUG) {
       // Draw hit area
-      ctx.strokeStyle = "rgba(255, 80, 80, 0.6)"; 
+      ctx.strokeStyle = "rgba(255, 80, 80, 0.6)";
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.hitRadius, 0, Math.PI * 2);
       ctx.stroke();
