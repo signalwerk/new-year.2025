@@ -45,6 +45,7 @@ const LEVELS = [
 ];
 
 const GAME_STATES = {
+  LOADING: "loading",
   MENU: "menu",
   PLAYING: "playing",
   LEVEL_COMPLETE: "levelComplete",
@@ -126,6 +127,65 @@ const FONT = {
   },
 };
 
+// Add at the top of the file, after other constants
+const ASSETS = {
+  METEORS: [
+    "./assets/img/meteor-1.png",
+    "./assets/img/meteor-2.png",
+    "./assets/img/meteor-3.png",
+  ],
+};
+
+// Add new AssetLoader class
+class AssetLoader {
+  constructor() {
+    this.images = new Map();
+    this.totalAssets = 0;
+    this.loadedAssets = 0;
+  }
+
+  async loadAll() {
+    const meteorPromises = ASSETS.METEORS.map((path, index) =>
+      this.loadImage(`meteor-${index}`, path),
+    );
+
+    try {
+      await Promise.all(meteorPromises);
+      return true;
+    } catch (error) {
+      console.error("Error loading assets:", error);
+      return false;
+    }
+  }
+
+  loadImage(key, src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      this.totalAssets++;
+
+      img.onload = () => {
+        this.images.set(key, img);
+        this.loadedAssets++;
+        resolve(img);
+      };
+
+      img.onerror = () => {
+        reject(new Error(`Failed to load image: ${src}`));
+      };
+
+      img.src = src;
+    });
+  }
+
+  getImage(key) {
+    return this.images.get(key);
+  }
+
+  getLoadingProgress() {
+    return this.totalAssets ? this.loadedAssets / this.totalAssets : 0;
+  }
+}
+
 // Test meteor
 class Meteor {
   constructor(lane, type = METEOR_TYPES[0]) {
@@ -157,10 +217,21 @@ class Meteor {
 
   draw(ctx) {
     const x = PADDING_LEFT + this.lane * LANE_WIDTH + LANE_WIDTH / 2;
-    ctx.fillStyle = this.type.color;
-    ctx.beginPath();
-    ctx.arc(x, this.y, 10, 0, Math.PI * 2);
-    ctx.fill();
+
+    // Get the corresponding meteor image
+    const meteorImage = game.assetLoader.getImage(`meteor-${this.type.id}`);
+
+    if (meteorImage) {
+      // Draw the image centered at the meteor's position
+      const size = 20; // Adjust size as needed
+      ctx.drawImage(meteorImage, x - size / 2, this.y - size / 2, size, size);
+    } else {
+      // Fallback to original circle drawing if image isn't loaded
+      ctx.fillStyle = this.type.color;
+      ctx.beginPath();
+      ctx.arc(x, this.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     if (DEBUG) {
       // Draw collision circle
@@ -655,10 +726,15 @@ class Game {
     this.lastTime = 0;
     this.meteors = [];
     this.coins = [];
+    this.assetLoader = new AssetLoader();
+    this.gameState = GAME_STATES.LOADING;
 
     // Initialize game dimensions and scaling
     this.initializeCanvas();
     window.addEventListener("resize", () => this.initializeCanvas());
+
+    // Load assets before starting the game
+    this.loadAssets();
 
     // Start game loop
     requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
@@ -974,10 +1050,11 @@ class Game {
   }
 
   draw() {
-    // Draw background first
     this.drawBackground();
 
-    if (this.gameState === GAME_STATES.MENU) {
+    if (this.gameState === GAME_STATES.LOADING) {
+      this.drawLoadingScreen();
+    } else if (this.gameState === GAME_STATES.MENU) {
       this.startButton.draw(this.ctx);
     } else if (this.gameState === GAME_STATES.PLAYING) {
       // Draw currency
@@ -1096,6 +1173,45 @@ class Game {
       ctx.font = FONT.SMALL.full;
       ctx.fillText(`${timeLeft}s`, GAME_WIDTH - 30, y + barHeight / 2 + 5);
     }
+  }
+
+  async loadAssets() {
+    const success = await this.assetLoader.loadAll();
+    if (success) {
+      this.gameState = GAME_STATES.MENU;
+    } else {
+      console.error("Failed to load assets");
+      // You might want to show an error message to the user
+    }
+  }
+
+  drawLoadingScreen() {
+    const progress = this.assetLoader.getLoadingProgress();
+
+    // Draw loading bar
+    const barWidth = 200;
+    const barHeight = 20;
+    const x = (GAME_WIDTH - barWidth) / 2;
+    const y = GAME_HEIGHT / 2;
+
+    // Background
+    this.ctx.fillStyle = "#333";
+    this.ctx.fillRect(x, y, barWidth, barHeight);
+
+    // Progress
+    this.ctx.fillStyle = "#4CAF50";
+    this.ctx.fillRect(x, y, barWidth * progress, barHeight);
+
+    // Border
+    this.ctx.strokeStyle = "white";
+    this.ctx.strokeRect(x, y, barWidth, barHeight);
+
+    // Loading text
+    this.ctx.fillStyle = "white";
+    this.ctx.font = FONT.LARGE.full;
+    this.ctx.textAlign = "center";
+    this.ctx.fillText("Loading...", GAME_WIDTH / 2, y - 20);
+    this.ctx.fillText(`${Math.floor(progress * 100)}%`, GAME_WIDTH / 2, y + 40);
   }
 }
 
