@@ -181,7 +181,7 @@ class Defense {
     return this.type === null;
   }
 
-  update(currentTime, x, y, meteors) {
+  update(currentTime, x, y, meteors, coins) {
     if (!this.isEmpty()) {
       // Fire projectile if enough time has passed
       if (currentTime - this.lastFireTime > this.fireRate) {
@@ -201,7 +201,7 @@ class Defense {
             if (destroyed) {
               // Spawn coin at meteor's position
               const meteorX = PADDING_LEFT + meteor.lane * LANE_WIDTH + LANE_WIDTH / 2;
-              game.coins.push(new Coin(meteorX, meteor.y));
+              coins.push(new Coin(meteorX, meteor.y));
               meteors.splice(i, 1);
             }
             return false; // Remove projectile
@@ -331,8 +331,8 @@ class DefenseSpot {
     }
   }
 
-  update(currentTime, meteors) {
-    this.defense.update(currentTime, this.x, this.y, meteors);
+  update(currentTime, meteors, coins) {
+    this.defense.update(currentTime, this.x, this.y, meteors, coins);
   }
 }
 
@@ -601,10 +601,10 @@ class Game {
 
     const currentTime = performance.now();
 
-    // Update all defense spots with current meteors
+    // Update all defense spots with current meteors and coins array
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
-        this.defenseGrid[row][lane].update(currentTime, this.meteors);
+        this.defenseGrid[row][lane].update(currentTime, this.meteors, this.coins);
       }
     }
 
