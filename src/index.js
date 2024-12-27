@@ -105,9 +105,9 @@ const METEOR_TYPES = [
     health: 30,
     speed: 0.05,
     damageRate: 30,
-    rotateRate: 0.001,
-    wiggleRate: 0,
-    wiggleAmount: 0,
+    rotateRate: 0.0005,
+    wiggleRate: 0.001,
+    wiggleAmount: 7,
     sizeMultiplier: { x: 1.0, y: 1.0 },
     coinReward: 10, // 1 coin
   },
@@ -119,8 +119,8 @@ const METEOR_TYPES = [
     speed: 0.02,
     damageRate: 50,
     rotateRate: 0,
-    wiggleRate: 0.003,
-    wiggleAmount: 5,
+    wiggleRate: 0.03,
+    wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
     coinReward: 20, // 2 coins
   },
@@ -132,8 +132,8 @@ const METEOR_TYPES = [
     speed: 0.08,
     damageRate: 50,
     rotateRate: 0,
-    wiggleRate: 0.002,
-    wiggleAmount: 5,
+    wiggleRate: 0.03,
+    wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
     coinReward: 30, // 3 coins
   },
@@ -231,7 +231,8 @@ class Meteor {
     this.blockingDefense = null;
 
     // Add rotation and wiggle properties
-    this.rotation = 0;
+    this.baseRotation = 0; // Base rotation from type.rotateRate
+    this.wiggleRotation = 0; // Additional rotation from wiggle motion
     this.wiggleOffset = 0;
     this.baseX = PADDING_LEFT + lane * LANE_WIDTH + LANE_WIDTH / 2;
   }
@@ -240,11 +241,14 @@ class Meteor {
     if (!this.isBlocked) {
       this.y += this.speed * deltaTime;
 
-      // Update rotation
-      this.rotation += this.type.rotateRate * deltaTime;
+      // Update base rotation
+      this.baseRotation += this.type.rotateRate * deltaTime;
 
-      // Update wiggle
+      // Update wiggle and calculate wiggle-based rotation
       this.wiggleOffset += this.type.wiggleRate * deltaTime;
+      // Calculate rotation based on wiggle movement (adjust 0.5 to control rotation intensity)
+      this.wiggleRotation =
+        Math.cos(this.wiggleOffset) * this.type.wiggleAmount * 0.5;
     }
   }
 
@@ -272,10 +276,8 @@ class Meteor {
       // Translate to meteor position
       ctx.translate(wiggleX, this.y);
 
-      // Rotate if rotation rate exists
-      if (this.type.rotateRate !== 0) {
-        ctx.rotate(this.rotation);
-      }
+      // Apply combined rotation (base rotation + wiggle-based rotation)
+      ctx.rotate(this.baseRotation + this.wiggleRotation);
 
       // Calculate size using multiplier
       const height = METEOR_SIZE * this.type.sizeMultiplier.y;
@@ -634,8 +636,8 @@ class Coin {
     this.vy = Math.sin(angle) * speed;
 
     // Wave motion parameters
-    this.waveAmplitude = 2 + Math.random() * 0.5;
-    this.waveFrequency = 0.005 + Math.random() * 0.01;
+    this.waveAmplitude = 2.2 + Math.random() * 0.2;
+    this.waveFrequency = 0.005 + Math.random() * 0.001;
     this.waveOffset = Math.random() * Math.PI * 2;
     this.baseX = x;
     this.baseY = y;

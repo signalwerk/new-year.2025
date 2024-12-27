@@ -17,10 +17,10 @@ crop_image() {
 }
 
 # Crop the first image
-crop_image "image-map.png" "meteor-3.png" 150 150 200 400
+crop_image "image-map.png" "meteor-2.png" 150 150 200 400
 
 # Crop the second image
-crop_image "image-map.png" "meteor-2.png" 350 150 200 400
+crop_image "image-map.png" "meteor-3.png" 350 150 200 400
 
 # Crop the third image
 crop_image "image-map.png" "meteor-1.png" 550 150 200 200
