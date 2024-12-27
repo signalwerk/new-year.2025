@@ -646,7 +646,7 @@ class Coin {
 
     if (DEBUG) {
       // Draw hit area
-      ctx.strokeStyle = "rgba(255, 215, 0, 0.3)"; // Semi-transparent gold
+      ctx.strokeStyle = "rgba(255, 80, 80, 0.6)"; 
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.hitRadius, 0, Math.PI * 2);
       ctx.stroke();
