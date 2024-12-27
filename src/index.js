@@ -21,6 +21,13 @@ const DEFENSE_TYPES = [
     { id: 2, name: 'Strong', color: '#9C27B0', cost: 300, damage: 30 }
 ];
 
+// Add to game constants
+const DEBUG = true;  // Toggle for development visualization
+
+// Calculate defense grid
+const SPOT_SIZE = GAME_WIDTH / LANES;  // Each spot is as wide as a lane
+const GRID_ROWS = Math.floor((GAME_HEIGHT - PADDING_TOP - PADDING_BOTTOM) / SPOT_SIZE);
+
 // Test meteor
 class Meteor {
     constructor(lane) {
@@ -149,6 +156,9 @@ class Game {
         this.currency = 500;
         this.defenseOptions = this.createDefenseOptions();
         this.selectedDefense = null;
+        
+        // Calculate defense spots
+        this.defenseSpots = this.calculateDefenseSpots();
     }
 
     initializeCanvas() {
@@ -255,6 +265,39 @@ class Game {
         this.ctx.fillRect(0, PADDING_TOP, PADDING_LEFT, this.gameAreaHeight);
         // Right padding
         this.ctx.fillRect(GAME_WIDTH - PADDING_RIGHT, PADDING_TOP, PADDING_RIGHT, this.gameAreaHeight);
+
+        // Debug: Draw defense spots
+        if (DEBUG) {
+            this.defenseSpots.forEach(spot => {
+                this.ctx.strokeStyle = '#666';
+                this.ctx.lineWidth = 1;
+                
+                // Draw spot circle
+                this.ctx.beginPath();
+                this.ctx.arc(spot.x, spot.y, 5, 0, Math.PI * 2);
+                this.ctx.stroke();
+                
+                // Draw spot grid square
+                this.ctx.strokeRect(
+                    spot.x - this.laneWidth/2,
+                    spot.y - this.laneWidth/2,
+                    this.laneWidth,
+                    this.laneWidth
+                );
+                
+                // Draw coordinates for debugging
+                if (DEBUG) {
+                    this.ctx.fillStyle = '#666';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(
+                        `${spot.lane},${spot.row}`,
+                        spot.x,
+                        spot.y
+                    );
+                }
+            });
+        }
     }
 
     update(deltaTime) {
@@ -310,6 +353,24 @@ class Game {
             const x = 10; // Align to left side
             return new DefenseOption(type, x, y);
         });
+    }
+
+    calculateDefenseSpots() {
+        const spots = [];
+        
+        // Start from bottom and work up
+        for (let row = 0; row < GRID_ROWS; row++) {
+            for (let lane = 0; lane < LANES; lane++) {
+                spots.push({
+                    x: PADDING_LEFT + (lane * this.laneWidth) + (this.laneWidth / 2),
+                    y: GAME_HEIGHT - PADDING_BOTTOM - (row * SPOT_SIZE) - (SPOT_SIZE / 2),
+                    row,
+                    lane
+                });
+            }
+        }
+        
+        return spots;
     }
 }
 
