@@ -17,6 +17,15 @@ const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 // Add to game constants
 const DEBUG = true; // Toggle for development visualization
 
+const COLORS = {
+  BACKGROUND: "#bfaa9d",
+  TEXT: "#fff",
+  DEFENSE_OPTION_TEXT: "#fff",
+  DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
+  BUTTON: "#444",
+  BUTTON_TEXT: "#fff",
+};
+
 // Add to game constants
 const LEVELS = [
   {
@@ -265,8 +274,8 @@ class Button {
     width,
     height,
     text,
-    backgroundColor = "#444",
-    textColor = "white",
+    backgroundColor = COLORS.BUTTON,
+    textColor = COLORS.BUTTON_TEXT,
     fontSize = 16,
   ) {
     this.x = x;
@@ -492,7 +501,9 @@ class DefenseOption {
     );
 
     // Draw cost (red if can't afford)
-    ctx.fillStyle = isInactive ? "red" : "white";
+    ctx.fillStyle = isInactive
+      ? COLORS.DEFENSE_OPTION_TEXT_INACTIVE
+      : COLORS.DEFENSE_OPTION_TEXT;
     ctx.font = FONT.LARGE.full;
     ctx.textAlign = "center";
     ctx.fillText(
@@ -971,7 +982,7 @@ class Game {
     }
 
     // Draw padding areas (for visualization)
-    this.ctx.fillStyle = "#222";
+    this.ctx.fillStyle = COLORS.BACKGROUND;
     // Top padding
     this.ctx.fillRect(0, 0, GAME_WIDTH, PADDING_TOP);
     // Bottom padding
