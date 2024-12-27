@@ -186,6 +186,9 @@ class AssetLoader {
   }
 }
 
+// Add at the top of the file, after constants
+let game; // Global game instance
+
 // Test meteor
 class Meteor {
   constructor(lane, type = METEOR_TYPES[0]) {
@@ -218,8 +221,8 @@ class Meteor {
   draw(ctx) {
     const x = PADDING_LEFT + this.lane * LANE_WIDTH + LANE_WIDTH / 2;
 
-    // Get the corresponding meteor image
-    const meteorImage = game.assetLoader.getImage(`meteor-${this.type.id}`);
+    // Get the corresponding meteor image from the game instance
+    const meteorImage = game?.assetLoader.getImage(`meteor-${this.type.id}`);
 
     if (meteorImage) {
       // Draw the image centered at the meteor's position
@@ -563,7 +566,7 @@ class Coin {
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
     this.size = 8;
-    this.hitRadius = 35; // Bigger radius for hit detection
+    this.hitRadius = 30; // Bigger radius for hit detection
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
@@ -1217,5 +1220,5 @@ class Game {
 
 // Start the game when the page loads
 window.addEventListener("load", () => {
-  new Game();
+  game = new Game();
 });
