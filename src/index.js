@@ -474,7 +474,7 @@ class Coin {
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
     this.size = 8;
-    this.hitRadius = 20; // Bigger radius for hit detection
+    this.hitRadius = 35; // Bigger radius for hit detection
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
