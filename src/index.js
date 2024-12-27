@@ -7,6 +7,16 @@ const PADDING_BOTTOM = 100; // More space for controls/UI
 const PADDING_LEFT = 40;
 const PADDING_RIGHT = 40;
 
+// Game area calculations
+const GAME_AREA_WIDTH = GAME_WIDTH - (PADDING_LEFT + PADDING_RIGHT);
+const GAME_AREA_HEIGHT = GAME_HEIGHT - (PADDING_TOP + PADDING_BOTTOM);
+const LANE_WIDTH = GAME_AREA_WIDTH / LANES;  // Width of each lane
+const SPOT_SIZE = LANE_WIDTH;  // Defense spots are same width as lanes
+const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
+
+// Add to game constants
+const DEBUG = true;  // Toggle for development visualization
+
 // Add to game constants
 const GAME_STATES = {
     MENU: 'menu',
@@ -21,27 +31,20 @@ const DEFENSE_TYPES = [
     { id: 2, name: 'Strong', color: '#9C27B0', cost: 300, damage: 30 }
 ];
 
-// Add to game constants
-const DEBUG = true;  // Toggle for development visualization
-
-// Calculate defense grid
-const SPOT_SIZE = GAME_WIDTH / LANES;  // Each spot is as wide as a lane
-const GRID_ROWS = Math.floor((GAME_HEIGHT - PADDING_TOP - PADDING_BOTTOM) / SPOT_SIZE);
-
 // Test meteor
 class Meteor {
     constructor(lane) {
         this.lane = lane;
-        this.y = PADDING_TOP; // Start at top of play area
-        this.speed = 0.1; // pixels per millisecond
+        this.y = PADDING_TOP;
+        this.speed = 0.1;
     }
 
     update(deltaTime) {
         this.y += this.speed * deltaTime;
     }
 
-    draw(ctx, laneWidth, laneStartX) {
-        const x = laneStartX + (this.lane * laneWidth) + (laneWidth / 2);
+    draw(ctx) {
+        const x = PADDING_LEFT + (this.lane * LANE_WIDTH) + (LANE_WIDTH / 2);
         ctx.fillStyle = 'red';
         ctx.beginPath();
         ctx.arc(x, this.y, 10, 0, Math.PI * 2);
@@ -118,7 +121,7 @@ class DefenseSpot {
         this.y = y;
         this.row = row;
         this.lane = lane;
-        this.defense = null; // Will store the placed defense
+        this.defense = null;
     }
 
     isEmpty() {
@@ -241,11 +244,6 @@ class Game {
         // Scale canvas using CSS
         this.canvas.style.width = `${GAME_WIDTH * scale}px`;
         this.canvas.style.height = `${GAME_HEIGHT * scale}px`;
-
-        // Calculate game area dimensions
-        this.gameAreaWidth = GAME_WIDTH - (PADDING_LEFT + PADDING_RIGHT);
-        this.gameAreaHeight = GAME_HEIGHT - (PADDING_TOP + PADDING_BOTTOM);
-        this.laneWidth = this.gameAreaWidth / LANES;
     }
 
     setupEventListeners() {
@@ -383,7 +381,7 @@ class Game {
             this.defenseOptions.forEach(option => option.draw(this.ctx));
             
             // Draw meteor
-            this.testMeteor.draw(this.ctx, this.laneWidth, PADDING_LEFT);
+            this.testMeteor.draw(this.ctx);
             
             // Highlight selected defense if any
             if (this.selectedDefense) {
@@ -413,7 +411,7 @@ class Game {
         for (let row = 0; row < GRID_ROWS; row++) {
             const rowArray = [];
             for (let lane = 0; lane < LANES; lane++) {
-                const x = PADDING_LEFT + (lane * SPOT_SIZE) + (SPOT_SIZE / 2);
+                const x = PADDING_LEFT + (lane * LANE_WIDTH) + (LANE_WIDTH / 2);
                 const y = GAME_HEIGHT - PADDING_BOTTOM - (row * SPOT_SIZE) - (SPOT_SIZE / 2);
                 rowArray.push(new DefenseSpot(x, y, row, lane));
             }
