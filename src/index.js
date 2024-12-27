@@ -217,6 +217,9 @@ class DefenseSpot {
   }
 }
 
+// Add to game constants
+const INITIAL_CURRENCY = 500;
+
 class Game {
   constructor() {
     this.canvas = document.getElementById("canvas");
@@ -270,7 +273,7 @@ class Game {
     );
 
     // Initialize currency and defense options
-    this.currency = 500;
+    this.currency = INITIAL_CURRENCY;
     this.defenseOptions = this.createDefenseOptions();
     this.selectedDefense = null;
 
@@ -330,7 +333,6 @@ class Game {
             if (this.currency >= this.selectedDefense.cost) {
               spot.placeDefense(this.selectedDefense);
               this.currency -= this.selectedDefense.cost;
-              this.selectedDefense = null;
             }
           }
         }
@@ -341,7 +343,14 @@ class Game {
   startGame() {
     this.gameState = GAME_STATES.PLAYING;
     this.testMeteor = new Meteor(2);
-    this.currency = 500; // Reset currency
+    this.currency = INITIAL_CURRENCY;
+
+    // Reset all defense spots
+    for (let row = 0; row < this.defenseGrid.length; row++) {
+      for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
+        this.defenseGrid[row][lane].removeDefense();
+      }
+    }
   }
 
   gameLoop(timestamp) {
