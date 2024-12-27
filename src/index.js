@@ -105,10 +105,11 @@ const METEOR_TYPES = [
     health: 30,
     speed: 0.05,
     damageRate: 30,
-    rotateRate: 0.001, // Slow rotation
-    wiggleRate: 0, // No wiggle
+    rotateRate: 0.001,
+    wiggleRate: 0,
     wiggleAmount: 0,
-    sizeMultiplier: { x: 1.0, y: 1.0 }, // Standard size
+    sizeMultiplier: { x: 1.0, y: 1.0 },
+    coinReward: 10, // 1 coin
   },
   {
     id: 1,
@@ -117,10 +118,11 @@ const METEOR_TYPES = [
     health: 60,
     speed: 0.02,
     damageRate: 50,
-    rotateRate: 0, // No rotation
-    wiggleRate: 0.003, // Medium wiggle speed
-    wiggleAmount: 5, // Wiggle amplitude in pixels
-    sizeMultiplier: { x: 1, y: 2 }, // 50% larger
+    rotateRate: 0,
+    wiggleRate: 0.003,
+    wiggleAmount: 5,
+    sizeMultiplier: { x: 1, y: 2 },
+    coinReward: 20, // 2 coins
   },
   {
     id: 2,
@@ -129,10 +131,11 @@ const METEOR_TYPES = [
     health: 90,
     speed: 0.08,
     damageRate: 50,
-    rotateRate: 0, // Counter-clockwise rotation
-    wiggleRate: 0.002, // Slow wiggle
-    wiggleAmount: 5, // Large wiggle amplitude
-    sizeMultiplier: { x: 1, y: 2.0 }, // Double size
+    rotateRate: 0,
+    wiggleRate: 0.002,
+    wiggleAmount: 5,
+    sizeMultiplier: { x: 1, y: 2 },
+    coinReward: 30, // 3 coins
   },
 ];
 
@@ -465,10 +468,10 @@ class Defense {
           if (projectile.checkCollision(meteor)) {
             const destroyed = meteor.takeDamage(projectile.damage);
             if (destroyed) {
-              // Spawn coin at meteor's position
+              // Spawn coin at meteor's position with meteor's reward value
               const meteorX =
                 PADDING_LEFT + meteor.lane * LANE_WIDTH + LANE_WIDTH / 2;
-              coins.push(new Coin(meteorX, meteor.y));
+              coins.push(new Coin(meteorX, meteor.y, meteor.type.coinReward));
               meteors.splice(i, 1);
             }
             return false; // Remove projectile
@@ -621,6 +624,7 @@ class Coin {
     this.createTime = performance.now();
     this.size = 8;
     this.hitRadius = 30; // Bigger radius for hit detection
+    this.coinCount = Math.floor(value / 10); // Number of coins to display
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
@@ -629,10 +633,10 @@ class Coin {
     this.vy = Math.sin(angle) * speed;
 
     // Wave motion parameters
-    this.waveAmplitude = 2 + Math.random() * 0.5; // Random wave size
-    this.waveFrequency = 0.005 + Math.random() * 0.01; // Random wave frequency
-    this.waveOffset = Math.random() * Math.PI * 2; // Random wave phase
-    this.baseX = x; // Keep track of base position
+    this.waveAmplitude = 2 + Math.random() * 0.5;
+    this.waveFrequency = 0.005 + Math.random() * 0.01;
+    this.waveOffset = Math.random() * Math.PI * 2;
+    this.baseX = x;
     this.baseY = y;
     this.time = 0;
   }
@@ -670,10 +674,9 @@ class Coin {
 
     // Start blinking when less than 1.5 seconds remaining
     if (remainingTime < 1500) {
-      // Blink faster as time runs out
       const blinkRate = 100 + (remainingTime / 1500) * 400;
       if (Math.floor(currentTime / blinkRate) % 2 === 0) {
-        return; // Skip drawing to create blink effect
+        return;
       }
     }
 
@@ -685,18 +688,32 @@ class Coin {
       ctx.stroke();
     }
 
-    // Draw coin
-    ctx.fillStyle = "#FFD700"; // Gold color
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fill();
+    // Draw multiple coins based on value
+    for (let i = 0; i < this.coinCount; i++) {
+      const offsetX = (i - (this.coinCount - 1)) * (this.size * 0.7);
+      const coinX =
+        this.x +
+        offsetX +
+        Math.sin(this.time * this.waveFrequency + this.waveOffset) *
+          this.waveAmplitude;
+      const coinY =
+        this.y +
+        Math.cos(this.time * this.waveFrequency + this.waveOffset) *
+          this.waveAmplitude;
 
-    // Draw value
-    ctx.fillStyle = "black";
-    ctx.font = FONT.SMALL.full;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`$`, this.x, this.y);
+      // Draw coin
+      ctx.fillStyle = "#FFD700"; // Gold color
+      ctx.beginPath();
+      ctx.arc(coinX, coinY, this.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw $ symbol
+      ctx.fillStyle = "black";
+      ctx.font = FONT.SMALL.full;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("$", coinX, coinY);
+    }
   }
 
   isClicked(clickX, clickY) {
