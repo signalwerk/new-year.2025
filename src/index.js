@@ -62,15 +62,15 @@ class Meteor {
 
     if (DEBUG) {
       // Draw collision circle
-      ctx.strokeStyle = 'rgba(255,0,0,0.3)';
+      ctx.strokeStyle = "rgba(255,0,0,0.3)";
       ctx.beginPath();
       ctx.arc(x, this.y, 10, 0, Math.PI * 2);
       ctx.stroke();
 
       // Draw health
-      ctx.fillStyle = 'white';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
+      ctx.fillStyle = "white";
+      ctx.font = "10px Arial";
+      ctx.textAlign = "center";
       ctx.fillText(`${this.health}`, x, this.y);
     }
   }
@@ -140,14 +140,14 @@ class Projectile {
   }
 
   draw(ctx) {
-    ctx.fillStyle = 'yellow';
+    ctx.fillStyle = "yellow";
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
 
     if (DEBUG) {
       // Draw collision circle
-      ctx.strokeStyle = 'rgba(255,255,0,0.3)';
+      ctx.strokeStyle = "rgba(255,255,0,0.3)";
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
       ctx.stroke();
@@ -159,7 +159,7 @@ class Projectile {
     const dx = this.x - meteorX;
     const dy = this.y - meteor.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    return distance < (this.size + 10); // 10 is meteor radius
+    return distance < this.size + 10; // 10 is meteor radius
   }
 
   isOffScreen() {
@@ -190,7 +190,7 @@ class Defense {
       }
 
       // Update existing projectiles and check collisions
-      this.projectiles = this.projectiles.filter(projectile => {
+      this.projectiles = this.projectiles.filter((projectile) => {
         projectile.update(16);
 
         // Check for collisions with any meteor
@@ -200,7 +200,8 @@ class Defense {
             const destroyed = meteor.takeDamage(projectile.damage);
             if (destroyed) {
               // Spawn coin at meteor's position
-              const meteorX = PADDING_LEFT + meteor.lane * LANE_WIDTH + LANE_WIDTH / 2;
+              const meteorX =
+                PADDING_LEFT + meteor.lane * LANE_WIDTH + LANE_WIDTH / 2;
               coins.push(new Coin(meteorX, meteor.y));
               meteors.splice(i, 1);
             }
@@ -347,13 +348,13 @@ class Coin {
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
     this.size = 8;
-    
+
     // Base movement
     const angle = Math.random() * Math.PI * 2;
     const speed = 0.3 + Math.random() * 0.1;
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
-    
+
     // Wave motion parameters
     this.waveAmplitude = 1 + Math.random() * 2; // Random wave size
     this.waveFrequency = 0.012 + Math.random() * 0.02; // Random wave frequency
@@ -365,14 +366,20 @@ class Coin {
 
   update(currentTime) {
     this.time += 16; // Increment time (assuming ~60fps)
-    
+
     // Update base position with velocity
     this.baseX += this.vx;
     this.baseY += this.vy;
-    
+
     // Add wave motion
-    this.x = this.baseX + Math.sin(this.time * this.waveFrequency + this.waveOffset) * this.waveAmplitude;
-    this.y = this.baseY + Math.cos(this.time * this.waveFrequency + this.waveOffset) * this.waveAmplitude;
+    this.x =
+      this.baseX +
+      Math.sin(this.time * this.waveFrequency + this.waveOffset) *
+        this.waveAmplitude;
+    this.y =
+      this.baseY +
+      Math.cos(this.time * this.waveFrequency + this.waveOffset) *
+        this.waveAmplitude;
 
     // Slow down movement
     // this.vx *= 0.98;
@@ -387,7 +394,7 @@ class Coin {
   draw(ctx, currentTime) {
     const age = currentTime - this.createTime;
     const remainingTime = this.lifetime - age;
-    
+
     // Start blinking when less than 1.5 seconds remaining
     if (remainingTime < 1500) {
       // Blink faster as time runs out
@@ -398,17 +405,24 @@ class Coin {
     }
 
     // Draw coin
-    ctx.fillStyle = '#FFD700'; // Gold color
+    ctx.fillStyle = "#FFD700"; // Gold color
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Draw value
-    ctx.fillStyle = 'white';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = "white";
+    ctx.font = "10px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillText(`$${this.value}`, this.x, this.y);
+  }
+
+  isClicked(clickX, clickY) {
+    const dx = clickX - this.x;
+    const dy = clickY - this.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < this.size;
   }
 }
 
@@ -507,25 +521,42 @@ class Game {
           this.startGame();
         }
       } else if (this.gameState === GAME_STATES.PLAYING) {
-        // Check if defense option was clicked
-        this.defenseOptions.forEach((option) => {
-          if (option.isClicked(x, y)) {
-            if (this.currency >= option.type.cost) {
-              this.selectedDefense = option.type;
-              console.log(`Selected ${option.type.name} defense`);
-            } else {
-              console.log("Not enough currency!");
-            }
+        // Check for coin collection first
+        let coinCollected = false;
+        for (let i = this.coins.length - 1; i >= 0; i--) {
+          const coin = this.coins[i];
+          if (coin.isClicked(x, y)) {
+            // Add coin value to currency
+            this.currency += coin.value;
+            // Remove coin
+            this.coins.splice(i, 1);
+            coinCollected = true;
+            break; // Only collect one coin per click
           }
-        });
+        }
 
-        // Check if grid spot was clicked
-        if (this.selectedDefense) {
-          const spot = this.getSpotAtPosition(x, y);
-          if (spot && spot.isEmpty()) {
-            if (this.currency >= this.selectedDefense.cost) {
-              spot.placeDefense(this.selectedDefense);
-              this.currency -= this.selectedDefense.cost;
+        // Only check defense interactions if we didn't collect a coin
+        if (!coinCollected) {
+          // Check if defense option was clicked
+          this.defenseOptions.forEach((option) => {
+            if (option.isClicked(x, y)) {
+              if (this.currency >= option.type.cost) {
+                this.selectedDefense = option.type;
+                console.log(`Selected ${option.type.name} defense`);
+              } else {
+                console.log("Not enough currency!");
+              }
+            }
+          });
+
+          // Check if grid spot was clicked
+          if (this.selectedDefense) {
+            const spot = this.getSpotAtPosition(x, y);
+            if (spot && spot.isEmpty()) {
+              if (this.currency >= this.selectedDefense.cost) {
+                spot.placeDefense(this.selectedDefense);
+                this.currency -= this.selectedDefense.cost;
+              }
             }
           }
         }
@@ -619,12 +650,16 @@ class Game {
     // Update all defense spots with current meteors and coins array
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
-        this.defenseGrid[row][lane].update(currentTime, this.meteors, this.coins);
+        this.defenseGrid[row][lane].update(
+          currentTime,
+          this.meteors,
+          this.coins,
+        );
       }
     }
 
     // Update meteors and check for game over
-    this.meteors = this.meteors.filter(meteor => {
+    this.meteors = this.meteors.filter((meteor) => {
       meteor.update(deltaTime);
       if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
         this.gameState = GAME_STATES.GAME_OVER;
@@ -634,7 +669,7 @@ class Game {
     });
 
     // Update coins
-    this.coins = this.coins.filter(coin => coin.update(currentTime));
+    this.coins = this.coins.filter((coin) => coin.update(currentTime));
 
     // If all meteors are destroyed, spawn a new one (for testing)
     if (this.meteors.length === 0) {
@@ -673,11 +708,11 @@ class Game {
       });
 
       // Draw meteors
-      this.meteors.forEach(meteor => meteor.draw(this.ctx));
-      
+      this.meteors.forEach((meteor) => meteor.draw(this.ctx));
+
       // Draw coins
       const currentTime = performance.now();
-      this.coins.forEach(coin => coin.draw(this.ctx, currentTime));
+      this.coins.forEach((coin) => coin.draw(this.ctx, currentTime));
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
