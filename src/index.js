@@ -61,9 +61,9 @@ const DEFENSE_TYPES = [
 
 // Add to game constants
 const METEOR_TYPES = [
-  { id: 0, name: "Small", color: "#FF9999", health: 20, speed: 0.05 },
-  { id: 1, name: "Medium", color: "#FF4444", health: 40, speed: 0.02 },
-  { id: 2, name: "Large", color: "#FF0000", health: 60, speed: 0.08 },
+  { id: 0, name: "Small", color: "#FF9999", health: 30, speed: 0.05 },
+  { id: 1, name: "Medium", color: "#FF4444", health: 60, speed: 0.02 },
+  { id: 2, name: "Large", color: "#FF0000", health: 90, speed: 0.08 },
 ];
 
 // Test meteor
@@ -75,10 +75,24 @@ class Meteor {
     this.y = PADDING_TOP;
     this.health = type.health;
     this.speed = type.speed;
+    this.isBlocked = false; // New property to track if meteor is blocked by defense
+    this.blockingDefense = null; // Reference to blocking defense
   }
 
   update(deltaTime) {
-    this.y += this.speed * deltaTime;
+    if (!this.isBlocked) {
+      this.y += this.speed * deltaTime;
+    }
+  }
+
+  block(defense) {
+    this.isBlocked = true;
+    this.blockingDefense = defense;
+  }
+
+  unblock() {
+    this.isBlocked = false;
+    this.blockingDefense = null;
   }
 
   draw(ctx) {
@@ -203,10 +217,16 @@ class Defense {
     this.projectiles = [];
     this.lastFireTime = 0;
     this.fireRate = 1000; // Fire every 1 second
+    this.damageRate = 10; // Damage taken per second from meteor
   }
 
   isEmpty() {
     return this.type === null;
+  }
+
+  takeDamage(amount) {
+    this.health -= amount;
+    return this.health <= 0;
   }
 
   update(currentTime, x, y, meteors, coins) {
@@ -216,6 +236,29 @@ class Defense {
         this.projectiles.push(new Projectile(x, y, this.type.damage));
         this.lastFireTime = currentTime;
       }
+
+      // Check for meteor collisions with this defense
+      const defenseRow = Math.floor((y - PADDING_TOP) / SPOT_SIZE);
+      meteors.forEach((meteor) => {
+        const meteorRow = Math.floor((meteor.y - PADDING_TOP) / SPOT_SIZE);
+        if (
+          meteorRow === defenseRow &&
+          meteor.lane === Math.floor((x - PADDING_LEFT) / LANE_WIDTH)
+        ) {
+          // Block meteor if not already blocked
+          if (!meteor.isBlocked) {
+            meteor.block(this);
+          }
+
+          // Take damage from meteor
+          if (meteor.blockingDefense === this) {
+            const destroyed = this.takeDamage(this.damageRate / 60); // Assuming 60 FPS
+            if (destroyed) {
+              meteor.unblock();
+            }
+          }
+        }
+      });
 
       // Update existing projectiles and check collisions
       this.projectiles = this.projectiles.filter((projectile) => {
@@ -251,10 +294,12 @@ class Defense {
     }
 
     if (!this.isEmpty()) {
-      // Draw defense
+      // Draw defense with health-based opacity
       ctx.fillStyle = this.type.color;
       if (isInactive) {
         ctx.globalAlpha = 0.5;
+      } else {
+        ctx.globalAlpha = Math.max(0.3, this.health / 100);
       }
       ctx.fillRect(x - size / 2, y - size / 2, size, size);
       ctx.globalAlpha = 1.0;
@@ -267,7 +312,7 @@ class Defense {
         ctx.fillStyle = "white";
         ctx.font = "10px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(`${this.health}%`, x, y);
+        ctx.fillText(`${Math.floor(this.health)}%`, x, y);
       }
 
       // Draw selection highlight
