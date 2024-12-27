@@ -474,7 +474,7 @@ class Coin {
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
     this.size = 8;
-    this.hitRadius = 35; // Bigger radius for hit detection
+    this.hitRadius = 27; // Bigger radius for hit detection
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
@@ -1049,9 +1049,9 @@ class Game {
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
     ctx.fillRect(x, y, barWidth, barHeight);
 
-    // Progress
-    const progress = this.levelManager.getLevelProgress();
-    ctx.fillStyle = "#4CAF50";
+    // Progress (inverted to show remaining time)
+    const progress = 1 - this.levelManager.getLevelProgress();
+    ctx.fillStyle = progress < 0.2 ? "#ff4444" : "#4CAF50"; // Red when low on time
     ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     // Border
