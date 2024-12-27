@@ -108,6 +108,24 @@ const METEOR_TYPES = [
   },
 ];
 
+// Font definitions
+const FONT = {
+  SMALL: {
+    size: "12px",
+    family: "Arial",
+    get full() {
+      return `${this.size} ${this.family}`;
+    },
+  },
+  LARGE: {
+    size: "14px",
+    family: "Arial",
+    get full() {
+      return `${this.size} ${this.family}`;
+    },
+  },
+};
+
 // Test meteor
 class Meteor {
   constructor(lane, type = METEOR_TYPES[0]) {
@@ -153,7 +171,7 @@ class Meteor {
 
       // Draw health
       ctx.fillStyle = "white";
-      ctx.font = "10px Arial";
+      ctx.font = FONT.SMALL.full;
       ctx.textAlign = "center";
       ctx.fillText(`${this.health}`, x, this.y);
     }
@@ -203,7 +221,7 @@ class Button {
 
     // Draw button text
     ctx.fillStyle = this.textColor;
-    ctx.font = `${this.fontSize}px Arial`;
+    ctx.font = FONT.LARGE.full;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(this.text, this.x + this.width / 2, this.y + this.height / 2);
@@ -359,7 +377,7 @@ class Defense {
       if (DEBUG) {
         // Draw health bar
         ctx.fillStyle = "white";
-        ctx.font = "10px Arial";
+        ctx.font = FONT.SMALL.full;
         ctx.textAlign = "center";
         ctx.fillText(
           `${Math.floor((this.health / this.maxHealth) * 100)}%`,
@@ -401,7 +419,7 @@ class DefenseOption {
 
     // Draw cost (red if can't afford)
     ctx.fillStyle = isInactive ? "red" : "white";
-    ctx.font = "12px Arial";
+    ctx.font = FONT.LARGE.full;
     ctx.textAlign = "center";
     ctx.fillText(
       `$${this.type.cost}`,
@@ -452,7 +470,7 @@ class DefenseSpot {
     if (DEBUG) {
       // Draw coordinates for debugging
       ctx.fillStyle = "#666";
-      ctx.font = "10px Arial";
+      ctx.font = FONT.SMALL.full;
       ctx.textAlign = "center";
       ctx.fillText(`${this.lane},${this.row}`, this.x, this.y);
     }
@@ -547,7 +565,7 @@ class Coin {
 
     // Draw value
     ctx.fillStyle = "black";
-    ctx.font = "10px Arial";
+    ctx.font = FONT.SMALL.full;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(`$`, this.x, this.y);
@@ -946,7 +964,7 @@ class Game {
 
   drawCurrency() {
     this.ctx.fillStyle = "white";
-    this.ctx.font = "20px Arial";
+    this.ctx.font = FONT.LARGE.full;
     this.ctx.textAlign = "left";
     this.ctx.fillText(
       `Currency: $${this.currency}`,
@@ -1060,7 +1078,7 @@ class Game {
 
     // Level text
     ctx.fillStyle = "white";
-    ctx.font = "14px Arial";
+    ctx.font = FONT.LARGE.full;
     ctx.textAlign = "center";
     ctx.fillText(
       `${LEVELS[this.levelManager.currentLevel].name}`,
@@ -1075,6 +1093,7 @@ class Game {
         1000,
     );
     if (timeLeft > 0) {
+      ctx.font = FONT.SMALL.full;
       ctx.fillText(`${timeLeft}s`, GAME_WIDTH - 30, y + barHeight / 2 + 5);
     }
   }
