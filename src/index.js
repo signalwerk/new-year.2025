@@ -199,6 +199,9 @@ class Defense {
           if (projectile.checkCollision(meteor)) {
             const destroyed = meteor.takeDamage(projectile.damage);
             if (destroyed) {
+              // Spawn coin at meteor's position
+              const meteorX = PADDING_LEFT + meteor.lane * LANE_WIDTH + LANE_WIDTH / 2;
+              game.coins.push(new Coin(meteorX, meteor.y));
               meteors.splice(i, 1);
             }
             return false; // Remove projectile
@@ -336,12 +339,71 @@ class DefenseSpot {
 // Add to game constants
 const INITIAL_CURRENCY = 500;
 
+class Coin {
+  constructor(x, y, value = 10) {
+    this.x = x;
+    this.y = y;
+    this.value = value;
+    this.lifetime = 5000; // 5 seconds lifetime
+    this.createTime = performance.now();
+    this.size = 8;
+    
+    // Random velocity for coin movement
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.1 + Math.random() * 0.1;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+  }
+
+  update(currentTime) {
+    // Update position
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Slow down movement
+    this.vx *= 0.98;
+    this.vy *= 0.98;
+
+    // Calculate remaining lifetime
+    const age = currentTime - this.createTime;
+    return age < this.lifetime; // Return false when coin should be removed
+  }
+
+  draw(ctx, currentTime) {
+    const age = currentTime - this.createTime;
+    const remainingTime = this.lifetime - age;
+    
+    // Start blinking when less than 1.5 seconds remaining
+    if (remainingTime < 1500) {
+      // Blink faster as time runs out
+      const blinkRate = 100 + (remainingTime / 1500) * 400;
+      if (Math.floor(currentTime / blinkRate) % 2 === 0) {
+        return; // Skip drawing to create blink effect
+      }
+    }
+
+    // Draw coin
+    ctx.fillStyle = '#FFD700'; // Gold color
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw value
+    ctx.fillStyle = 'white';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${this.value}`, this.x, this.y);
+  }
+}
+
 class Game {
   constructor() {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.lastTime = 0;
     this.meteors = [];
+    this.coins = [];
 
     // Initialize game dimensions and scaling
     this.initializeCanvas();
@@ -547,7 +609,7 @@ class Game {
     }
 
     // Update meteors and check for game over
-    this.meteors = this.meteors.filter((meteor) => {
+    this.meteors = this.meteors.filter(meteor => {
       meteor.update(deltaTime);
       if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
         this.gameState = GAME_STATES.GAME_OVER;
@@ -555,6 +617,9 @@ class Game {
       }
       return true;
     });
+
+    // Update coins
+    this.coins = this.coins.filter(coin => coin.update(currentTime));
 
     // If all meteors are destroyed, spawn a new one (for testing)
     if (this.meteors.length === 0) {
@@ -593,7 +658,11 @@ class Game {
       });
 
       // Draw meteors
-      this.meteors.forEach((meteor) => meteor.draw(this.ctx));
+      this.meteors.forEach(meteor => meteor.draw(this.ctx));
+      
+      // Draw coins
+      const currentTime = performance.now();
+      this.coins.forEach(coin => coin.draw(this.ctx, currentTime));
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
