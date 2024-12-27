@@ -14,6 +14,13 @@ const GAME_STATES = {
     GAME_OVER: 'gameover'
 };
 
+// Add to game constants
+const DEFENSE_TYPES = [
+    { id: 0, name: 'Basic', color: '#4CAF50', cost: 100, damage: 10 },
+    { id: 1, name: 'Medium', color: '#2196F3', cost: 200, damage: 20 },
+    { id: 2, name: 'Strong', color: '#9C27B0', cost: 300, damage: 30 }
+];
+
 // Test meteor
 class Meteor {
     constructor(lane) {
@@ -71,6 +78,33 @@ class Button {
     }
 }
 
+class DefenseOption {
+    constructor(type, x, y) {
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.width = 50;
+        this.height = 50;
+    }
+
+    draw(ctx) {
+        // Draw defense square
+        ctx.fillStyle = this.type.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        // Draw cost
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`$${this.type.cost}`, this.x + this.width/2, this.y + this.height + 15);
+    }
+
+    isClicked(clickX, clickY) {
+        return clickX >= this.x && clickX <= this.x + this.width &&
+               clickY >= this.y && clickY <= this.y + this.height;
+    }
+}
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('canvas');
@@ -110,6 +144,11 @@ class Game {
             'red', 
             24
         );
+        
+        // Initialize currency and defense options
+        this.currency = 500;
+        this.defenseOptions = this.createDefenseOptions();
+        this.selectedDefense = null;
     }
 
     initializeCanvas() {
@@ -149,6 +188,18 @@ class Game {
                 if (this.retryButton.isClicked(x, y)) {
                     this.startGame();
                 }
+            } else if (this.gameState === GAME_STATES.PLAYING) {
+                // Check if defense option was clicked
+                this.defenseOptions.forEach(option => {
+                    if (option.isClicked(x, y)) {
+                        if (this.currency >= option.type.cost) {
+                            this.selectedDefense = option.type;
+                            console.log(`Selected ${option.type.name} defense`);
+                        } else {
+                            console.log('Not enough currency!');
+                        }
+                    }
+                });
             }
         });
     }
@@ -156,6 +207,7 @@ class Game {
     startGame() {
         this.gameState = GAME_STATES.PLAYING;
         this.testMeteor = new Meteor(2);
+        this.currency = 500; // Reset currency
     }
 
     gameLoop(timestamp) {
@@ -216,6 +268,13 @@ class Game {
         }
     }
 
+    drawCurrency() {
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(`Currency: $${this.currency}`, PADDING_LEFT, PADDING_TOP/2);
+    }
+
     draw() {
         // Draw background first
         this.drawBackground();
@@ -223,11 +282,34 @@ class Game {
         if (this.gameState === GAME_STATES.MENU) {
             this.startButton.draw(this.ctx);
         } else if (this.gameState === GAME_STATES.PLAYING) {
+            // Draw currency
+            this.drawCurrency();
+            
+            // Draw defense options
+            this.defenseOptions.forEach(option => option.draw(this.ctx));
+            
+            // Draw meteor
             this.testMeteor.draw(this.ctx, this.laneWidth, PADDING_LEFT);
+            
+            // Highlight selected defense if any
+            if (this.selectedDefense) {
+                this.ctx.strokeStyle = 'yellow';
+                this.ctx.lineWidth = 2;
+                const option = this.defenseOptions[this.selectedDefense.id];
+                this.ctx.strokeRect(option.x, option.y, option.width, option.height);
+            }
         } else if (this.gameState === GAME_STATES.GAME_OVER) {
             this.gameOverText.draw(this.ctx);
             this.retryButton.draw(this.ctx);
         }
+    }
+
+    createDefenseOptions() {
+        return DEFENSE_TYPES.map((type, index) => {
+            const y = PADDING_TOP + 50 + (index * 80); // Space them vertically
+            const x = 10; // Align to left side
+            return new DefenseOption(type, x, y);
+        });
     }
 }
 
