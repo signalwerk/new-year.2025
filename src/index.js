@@ -18,10 +18,36 @@ const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 const DEBUG = true; // Toggle for development visualization
 
 // Add to game constants
+const LEVELS = [
+  {
+    name: "Level 1",
+    waves: [
+      { type: 0, count: 3, delay: 2000, spacing: 1000 }, // 3 small meteors
+      { type: 0, count: 5, delay: 5000, spacing: 800 }, // 5 small meteors faster
+      { type: 1, count: 2, delay: 3000, spacing: 2000 }, // 2 medium meteors
+      { type: 0, count: 4, delay: 2000, spacing: 500 }, // 4 small meteors very fast
+      { type: 1, count: 3, delay: 3000, spacing: 1500 }, // Final wave: 3 medium meteors
+    ],
+  },
+  {
+    name: "Level 2",
+    waves: [
+      { type: 1, count: 3, delay: 2000, spacing: 1200 }, // 3 medium meteors
+      { type: 0, count: 6, delay: 3000, spacing: 400 }, // 6 small meteors fast
+      { type: 2, count: 1, delay: 4000, spacing: 0 }, // 1 large meteor
+      { type: 1, count: 4, delay: 2000, spacing: 1000 }, // 4 medium meteors
+      { type: 2, count: 2, delay: 5000, spacing: 2000 }, // 2 large meteors
+      { type: 0, count: 8, delay: 2000, spacing: 300 }, // Final wave: 8 small meteors
+    ],
+  },
+];
+
 const GAME_STATES = {
   MENU: "menu",
   PLAYING: "playing",
+  LEVEL_COMPLETE: "levelComplete",
   GAME_OVER: "gameover",
+  GAME_COMPLETE: "gameComplete",
 };
 
 // Add to game constants
@@ -435,6 +461,78 @@ class Coin {
   }
 }
 
+class LevelManager {
+  constructor() {
+    this.currentLevel = 0;
+    this.currentWave = 0;
+    this.meteorsInWave = 0;
+    this.nextMeteorTime = 0;
+    this.waveDelay = 0;
+    this.meteorsSpawned = 0;
+    this.totalMeteorsInLevel = 0;
+    this.meteorsDestroyedInLevel = 0;
+  }
+
+  startLevel(levelIndex) {
+    this.currentLevel = levelIndex;
+    this.currentWave = 0;
+    this.meteorsInWave = 0;
+    this.nextMeteorTime = performance.now();
+    this.meteorsSpawned = 0;
+    this.meteorsDestroyedInLevel = 0;
+
+    // Calculate total meteors in level
+    this.totalMeteorsInLevel = LEVELS[levelIndex].waves.reduce(
+      (total, wave) => total + wave.count,
+      0,
+    );
+  }
+
+  update(currentTime, meteors) {
+    if (this.currentLevel >= LEVELS.length) return false;
+
+    const level = LEVELS[this.currentLevel];
+    const wave = level.waves[this.currentWave];
+
+    if (!wave) return false;
+
+    if (currentTime >= this.nextMeteorTime && this.meteorsInWave < wave.count) {
+      // Spawn new meteor
+      meteors.push(
+        new Meteor(Math.floor(Math.random() * LANES), METEOR_TYPES[wave.type]),
+      );
+
+      this.meteorsInWave++;
+      this.meteorsSpawned++;
+      this.nextMeteorTime = currentTime + wave.spacing;
+
+      // If wave complete, setup next wave
+      if (this.meteorsInWave >= wave.count) {
+        this.meteorsInWave = 0;
+        this.currentWave++;
+        this.nextMeteorTime = currentTime + wave.delay;
+      }
+    }
+
+    return true;
+  }
+
+  getLevelProgress() {
+    return this.meteorsDestroyedInLevel / this.totalMeteorsInLevel;
+  }
+
+  meteorDestroyed() {
+    this.meteorsDestroyedInLevel++;
+  }
+
+  isLevelComplete() {
+    return (
+      this.meteorsDestroyedInLevel >= this.totalMeteorsInLevel &&
+      this.meteors.length === 0
+    );
+  }
+}
+
 class Game {
   constructor() {
     this.canvas = document.getElementById("canvas");
@@ -495,6 +593,39 @@ class Game {
 
     // Initialize the defense grid
     this.defenseGrid = this.createDefenseGrid();
+
+    this.levelManager = new LevelManager();
+
+    // Add new buttons
+    this.nextLevelButton = new Button(
+      GAME_WIDTH / 2 - 60,
+      GAME_HEIGHT / 2 + 50,
+      120,
+      40,
+      "Next Level",
+    );
+
+    this.levelCompleteText = new Button(
+      GAME_WIDTH / 2 - 100,
+      GAME_HEIGHT / 2 - 50,
+      200,
+      50,
+      "Level Complete!",
+      "transparent",
+      "#4CAF50",
+      24,
+    );
+
+    this.gameCompleteText = new Button(
+      GAME_WIDTH / 2 - 100,
+      GAME_HEIGHT / 2 - 50,
+      200,
+      50,
+      "Game Complete!",
+      "transparent",
+      "#4CAF50",
+      24,
+    );
   }
 
   initializeCanvas() {
@@ -569,22 +700,45 @@ class Game {
             }
           }
         }
+      } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
+        if (this.nextLevelButton.isClicked(x, y)) {
+          this.startNextLevel();
+        }
       }
     });
   }
 
   startGame() {
     this.gameState = GAME_STATES.PLAYING;
-    this.meteors = [new Meteor(2)]; // Start with one meteor
+    this.meteors = [];
+    this.coins = [];
     this.currency = INITIAL_CURRENCY;
     this.selectedDefense = null;
+    this.levelManager.startLevel(0);
 
-    // Reset all defense spots
+    // Reset defense grid
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
         this.defenseGrid[row][lane].removeDefense();
       }
     }
+  }
+
+  startNextLevel() {
+    this.meteors = [];
+    this.coins = [];
+    this.currency = INITIAL_CURRENCY;
+    this.selectedDefense = null;
+
+    // Reset defense grid
+    for (let row = 0; row < this.defenseGrid.length; row++) {
+      for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
+        this.defenseGrid[row][lane].removeDefense();
+      }
+    }
+
+    this.levelManager.startLevel(this.levelManager.currentLevel + 1);
+    this.gameState = GAME_STATES.PLAYING;
   }
 
   gameLoop(timestamp) {
@@ -656,6 +810,17 @@ class Game {
 
     const currentTime = performance.now();
 
+    // Update level manager
+    if (!this.levelManager.update(currentTime, this.meteors)) {
+      if (this.meteors.length === 0) {
+        if (this.levelManager.currentLevel >= LEVELS.length - 1) {
+          this.gameState = GAME_STATES.GAME_COMPLETE;
+        } else {
+          this.gameState = GAME_STATES.LEVEL_COMPLETE;
+        }
+      }
+    }
+
     // Update all defense spots with current meteors and coins array
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
@@ -722,6 +887,11 @@ class Game {
       // Draw coins
       const currentTime = performance.now();
       this.coins.forEach((coin) => coin.draw(this.ctx, currentTime));
+    } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
+      this.levelCompleteText.draw(this.ctx);
+      this.nextLevelButton.draw(this.ctx);
+    } else if (this.gameState === GAME_STATES.GAME_COMPLETE) {
+      this.gameCompleteText.draw(this.ctx);
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
@@ -770,6 +940,32 @@ class Game {
       }
     }
     return null;
+  }
+
+  drawProgressBar(ctx) {
+    const progress = this.levelManager.getLevelProgress();
+    const barWidth = 200;
+    const barHeight = 20;
+    const x = GAME_WIDTH / 2 - barWidth / 2;
+    const y = 20;
+
+    // Draw background
+    ctx.fillStyle = "#333";
+    ctx.fillRect(x, y, barWidth, barHeight);
+
+    // Draw progress
+    ctx.fillStyle = "#4CAF50";
+    ctx.fillRect(x, y, barWidth * progress, barHeight);
+
+    // Draw text
+    ctx.fillStyle = "white";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      `Level ${this.levelManager.currentLevel + 1}`,
+      GAME_WIDTH / 2,
+      y + barHeight / 2 + 4,
+    );
   }
 }
 
