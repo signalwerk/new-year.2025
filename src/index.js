@@ -344,6 +344,7 @@ class Game {
     this.gameState = GAME_STATES.PLAYING;
     this.testMeteor = new Meteor(2);
     this.currency = INITIAL_CURRENCY;
+    this.selectedDefense = null;
 
     // Reset all defense spots
     for (let row = 0; row < this.defenseGrid.length; row++) {
