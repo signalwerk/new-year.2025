@@ -622,9 +622,10 @@ class Coin {
     this.value = value;
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
-    this.size = 8;
     this.hitRadius = 30; // Bigger radius for hit detection
-    this.coinCount = Math.floor(value / 10); // Number of coins to display
+
+    // Size based on value
+    this.size = 8 + ((value - 10) / 10) * 2; // Increases by 2 pixels for each 10 value
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
@@ -639,33 +640,6 @@ class Coin {
     this.baseX = x;
     this.baseY = y;
     this.time = 0;
-  }
-
-  update(currentTime) {
-    this.time += 16; // Increment time (assuming ~60fps)
-
-    // Update base position with velocity
-    this.baseX += this.vx;
-    this.baseY += this.vy;
-
-    // Add wave motion
-    this.x =
-      this.baseX +
-      Math.sin(this.time * this.waveFrequency + this.waveOffset) *
-        this.waveAmplitude;
-    this.y =
-      this.baseY +
-      Math.cos(this.time * this.waveFrequency + this.waveOffset) *
-        this.waveAmplitude;
-
-    // Slow down movement
-    // this.vx *= 0.98;
-    // this.vy *= 0.98;
-    // this.waveAmplitude *= 0.99; // Gradually reduce wave size
-
-    // Calculate remaining lifetime
-    const age = currentTime - this.createTime;
-    return age < this.lifetime;
   }
 
   draw(ctx, currentTime) {
@@ -688,39 +662,72 @@ class Coin {
       ctx.stroke();
     }
 
-    // Draw multiple coins based on value
-    for (let i = 0; i < this.coinCount; i++) {
-      const offsetX = (i - (this.coinCount - 1)) * (this.size * 0.7);
-      const coinX =
-        this.x +
-        offsetX +
-        Math.sin(this.time * this.waveFrequency + this.waveOffset) *
-          this.waveAmplitude;
-      const coinY =
-        this.y +
-        Math.cos(this.time * this.waveFrequency + this.waveOffset) *
-          this.waveAmplitude;
+    const coinX =
+      this.x +
+      Math.sin(this.time * this.waveFrequency + this.waveOffset) *
+        this.waveAmplitude;
+    const coinY =
+      this.y +
+      Math.cos(this.time * this.waveFrequency + this.waveOffset) *
+        this.waveAmplitude;
 
-      // Draw coin
-      ctx.fillStyle = "#FFD700"; // Gold color
-      ctx.beginPath();
-      ctx.arc(coinX, coinY, this.size, 0, Math.PI * 2);
-      ctx.fill();
+    // Draw coin with gradient for more depth
+    const gradient = ctx.createRadialGradient(
+      coinX - this.size / 3,
+      coinY - this.size / 3,
+      0,
+      coinX,
+      coinY,
+      this.size,
+    );
+    gradient.addColorStop(0, "#FFD700"); // Bright gold
+    gradient.addColorStop(1, "#DAA520"); // Darker gold
 
-      // Draw $ symbol
-      ctx.fillStyle = "black";
-      ctx.font = FONT.SMALL.full;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("$", coinX, coinY);
-    }
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(coinX, coinY, this.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Add coin border
+    ctx.strokeStyle = "#B8860B"; // Dark gold
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw value
+    ctx.fillStyle = "black";
+    ctx.font = `bold ${Math.max(10, this.size)}px ${FONT.SMALL.family}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${this.value}`, coinX, coinY);
+  }
+
+  update(currentTime) {
+    this.time += 16; // Increment time (assuming ~60fps)
+
+    // Update base position with velocity
+    this.baseX += this.vx;
+    this.baseY += this.vy;
+
+    // Add wave motion
+    this.x =
+      this.baseX +
+      Math.sin(this.time * this.waveFrequency + this.waveOffset) *
+        this.waveAmplitude;
+    this.y =
+      this.baseY +
+      Math.cos(this.time * this.waveFrequency + this.waveOffset) *
+        this.waveAmplitude;
+
+    // Calculate remaining lifetime
+    const age = currentTime - this.createTime;
+    return age < this.lifetime;
   }
 
   isClicked(clickX, clickY) {
     const dx = clickX - this.x;
     const dy = clickY - this.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    return distance < this.hitRadius; // Use bigger radius for hit detection
+    return distance < this.hitRadius;
   }
 }
 
