@@ -108,7 +108,7 @@ class Defense {
     return this.type === null;
   }
 
-  draw(ctx, x, y, size) {
+  draw(ctx, x, y, size, isSelected = false) {
     if (DEBUG) {
       // Draw spot outline
       ctx.strokeStyle = this.isEmpty() ? "#666" : "#888";
@@ -128,6 +128,13 @@ class Defense {
         ctx.textAlign = "center";
         ctx.fillText(`${this.health}%`, x, y);
       }
+
+      // Draw selection highlight
+      if (isSelected) {
+        ctx.strokeStyle = "yellow";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+      }
     }
   }
 }
@@ -140,13 +147,14 @@ class DefenseOption {
     this.defense = new Defense(type);
   }
 
-  draw(ctx) {
+  draw(ctx, isSelected = false) {
     // Draw defense using Defense class
     this.defense.draw(
       ctx,
       this.x + SPOT_SIZE / 2,
       this.y + SPOT_SIZE / 2,
       SPOT_SIZE,
+      isSelected,
     );
 
     // Draw cost
@@ -433,18 +441,15 @@ class Game {
       this.drawCurrency();
 
       // Draw defense options
-      this.defenseOptions.forEach((option) => option.draw(this.ctx));
+      this.defenseOptions.forEach((option) => {
+        option.draw(
+          this.ctx,
+          this.selectedDefense && option.type.id === this.selectedDefense.id,
+        );
+      });
 
       // Draw meteor
       this.testMeteor.draw(this.ctx);
-
-      // Highlight selected defense if any
-      if (this.selectedDefense) {
-        this.ctx.strokeStyle = "yellow";
-        this.ctx.lineWidth = 2;
-        const option = this.defenseOptions[this.selectedDefense.id];
-        this.ctx.strokeRect(option.x, option.y, option.width, option.height);
-      }
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
