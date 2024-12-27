@@ -88,6 +88,37 @@ class Button {
     }
 }
 
+// Add to game constants
+class Defense {
+    constructor(type) {
+        this.type = type;
+        this.health = 100;
+    }
+
+    draw(ctx, x, y, size) {
+        // Draw defense square
+        ctx.fillStyle = this.type.color;
+        ctx.fillRect(
+            x - size/2,
+            y - size/2,
+            size,
+            size
+        );
+
+        if (DEBUG) {
+            // Draw health bar or other debug info
+            ctx.fillStyle = 'white';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(
+                `${this.health}%`,
+                x,
+                y
+            );
+        }
+    }
+}
+
 class DefenseOption {
     constructor(type, x, y) {
         this.type = type;
@@ -95,12 +126,12 @@ class DefenseOption {
         this.y = y;
         this.width = 50;
         this.height = 50;
+        this.defense = new Defense(type); // Create defense instance
     }
 
     draw(ctx) {
-        // Draw defense square
-        ctx.fillStyle = this.type.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        // Draw defense using Defense class
+        this.defense.draw(ctx, this.x + this.width/2, this.y + this.height/2, this.width);
         
         // Draw cost
         ctx.fillStyle = 'white';
@@ -130,11 +161,7 @@ class DefenseSpot {
 
     placeDefense(defenseType) {
         if (this.isEmpty()) {
-            this.defense = {
-                type: defenseType,
-                health: 100,
-                // Add more properties as needed
-            };
+            this.defense = new Defense(defenseType);
             return true;
         }
         return false;
@@ -167,15 +194,9 @@ class DefenseSpot {
             );
         }
 
-        // If there's a defense placed here, draw it
+        // If there's a defense placed here, draw it using Defense class
         if (!this.isEmpty()) {
-            ctx.fillStyle = this.defense.type.color;
-            ctx.fillRect(
-                this.x - SPOT_SIZE/2,
-                this.y - SPOT_SIZE/2,
-                SPOT_SIZE,
-                SPOT_SIZE
-            );
+            this.defense.draw(ctx, this.x, this.y, SPOT_SIZE);
         }
     }
 }
