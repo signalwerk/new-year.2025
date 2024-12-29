@@ -1009,6 +1009,7 @@ class Game {
               if (this.currency >= this.selectedDefense.cost) {
                 spot.placeDefense(this.selectedDefense);
                 this.currency -= this.selectedDefense.cost;
+                this.selectedDefense = null; // Reset selection after placing defense
               }
             }
           }
