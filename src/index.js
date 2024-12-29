@@ -950,18 +950,30 @@ class Game {
   }
 
   initializeCanvas() {
-    // Calculate scaling to fit viewport while maintaining aspect ratio
+    // Get dynamic viewport height (accounts for mobile browser UI elements)
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const scale = Math.min(
-      viewportWidth / GAME_WIDTH,
-      viewportHeight / GAME_HEIGHT,
-    );
+
+    // Calculate maximum possible game size that maintains aspect ratio
+    const gameAspectRatio = GAME_WIDTH / GAME_HEIGHT;
+    const viewportAspectRatio = viewportWidth / viewportHeight;
+
+    let scale;
+    if (viewportAspectRatio > gameAspectRatio) {
+      // Viewport is wider than game - fit to height
+      scale = viewportHeight / GAME_HEIGHT;
+    } else {
+      // Viewport is taller than game - fit to width
+      scale = viewportWidth / GAME_WIDTH;
+    }
+
+    // Ensure the scaled size doesn't exceed viewport
+    scale = Math.min(scale, 1);
 
     this.canvas.width = GAME_WIDTH;
     this.canvas.height = GAME_HEIGHT;
 
-    // Scale canvas using CSS
+    // Apply scale through CSS
     this.canvas.style.width = `${GAME_WIDTH * scale}px`;
     this.canvas.style.height = `${GAME_HEIGHT * scale}px`;
   }
