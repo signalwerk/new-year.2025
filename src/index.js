@@ -64,8 +64,8 @@ function generateLevels() {
       // Calculate progress through level (0 to 1)
       const levelProgress = currentTime / duration;
 
-      // Increase difficulty within level (x% harder by end of level)
-      const intraLevelMultiplier = 1 + levelProgress * 0.4;
+      // Increase difficulty within level (xxx% harder by end of level)
+      const intraLevelMultiplier = 1 + levelProgress * 1.2;
 
       // Combined multipliers for this wave
       const spawnMultiplier = baseSpawnMultiplier * intraLevelMultiplier;
@@ -159,7 +159,7 @@ const METEOR_TYPES = [
     wiggleRate: 0.001,
     wiggleAmount: 7,
     sizeMultiplier: { x: 1.0, y: 1.0 },
-    coinReward: 10, // 1 coin
+    coinReward: 20, // 1 coin
   },
   {
     id: 1,
@@ -172,7 +172,7 @@ const METEOR_TYPES = [
     wiggleRate: 0.03,
     wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
-    coinReward: 20, // 2 coins
+    coinReward: 40, // 2 coins
   },
   {
     id: 2,
@@ -185,7 +185,7 @@ const METEOR_TYPES = [
     wiggleRate: 0.03,
     wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
-    coinReward: 30, // 3 coins
+    coinReward: 60, // 3 coins
   },
 ];
 
