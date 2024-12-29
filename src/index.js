@@ -43,6 +43,7 @@ function generateLevels() {
   // Base multipliers for level-to-level scaling
   const levelSpawnMultiplier = 0.3;
   const levelCountMultiplier = 0.2;
+  const levelDangerMultiplier = 0.15; // New: Controls danger increase across levels
 
   for (let i = 0; i < 10; i++) {
     const levelIndex = i + 1;
@@ -51,10 +52,7 @@ function generateLevels() {
     // Level-wide difficulty multipliers
     const baseSpawnMultiplier = 1 + i * levelSpawnMultiplier;
     const baseCountMultiplier = 1 + i * levelCountMultiplier;
-
-    // Meteor type availability - now available from start but with lower probability
-    const mediumUnlockFactor = Math.min(1, (levelIndex - 1) / 2); // Gradually increases to 1 by level 3
-    const largeUnlockFactor = Math.min(1, (levelIndex - 2) / 3);  // Gradually increases to 1 by level 5
+    const baseDangerMultiplier = 1 + i * levelDangerMultiplier; // New: Base danger for this level
 
     const waves = [];
     let currentTime = 500;
@@ -71,19 +69,24 @@ function generateLevels() {
       const spawnMultiplier = baseSpawnMultiplier * intraLevelMultiplier;
       const countMultiplier = baseCountMultiplier * intraLevelMultiplier;
 
-      // Progressive meteor type probabilities based on level progress AND unlock factors
-      const dangerFactor = levelProgress * 0.5; // Increases danger as level progresses
+      // Calculate danger probability based on level progress AND overall level
+      const progressDanger = levelProgress * 0.7; // Increases from 0 to 0.7 within level
+      const levelDanger = (levelIndex - 1) * 0.1; // Increases by 0.1 per level
+      const totalDangerFactor = (progressDanger + levelDanger) * baseDangerMultiplier;
+
+      // Determine meteor type based on combined danger factor
       let meteorType;
+      const random = Math.random();
       
-      if (Math.random() < 0.15 * largeUnlockFactor * (1 + dangerFactor)) {
-        meteorType = 2; // Large meteor (probability increases with progress)
-      } else if (Math.random() < 0.25 * mediumUnlockFactor * (1 + dangerFactor)) {
-        meteorType = 1; // Medium meteor (probability increases with progress)
+      if (random < 0.2 * totalDangerFactor) {
+        meteorType = 2; // Large meteor
+      } else if (random < 0.4 * totalDangerFactor) {
+        meteorType = 1; // Medium meteor
       } else {
-        meteorType = 0; // Small meteor (default)
+        meteorType = 0; // Small meteor
       }
 
-      // Base counts and spacing
+      // Base counts and spacing (adjusted for balance)
       const baseCount = meteorType === 2 ? 1 : meteorType === 1 ? 2 : 3;
       const count = Math.ceil(baseCount * countMultiplier);
       const spacing = meteorType === 2 ? 2500 : meteorType === 1 ? 1500 : 1000;
