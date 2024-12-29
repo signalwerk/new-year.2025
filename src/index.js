@@ -34,66 +34,32 @@ const COLORS = {
   SELECTION: "rgba(255,80,80,0.7)",
 };
 
-// Replace the LEVELS constant with this generator
-const LEVELS = generateLevels();
-
-function generateLevels() {
-  const levels = [];
-
-  for (let i = 0; i < 10; i++) {
-    const levelIndex = i + 1;
-    const duration = levelIndex <= 3 ? 90000 : 150000; // Convert seconds to milliseconds
-
-    // Calculate difficulty multipliers (increases with each level)
-    const spawnMultiplier = 1 + i * 0.15; // Affects wave frequency
-    const countMultiplier = 1 + i * 0.2; // Affects meteors per wave
-
-    // Calculate meteor type probabilities
-    const allowMedium = levelIndex >= 2; // Medium meteors start at level 2
-    const allowLarge = levelIndex >= 4; // Large meteors start at level 4
-
-    const waves = [];
-    let currentTime = 2000; // Start first wave at 2 seconds
-
-    // Generate waves for this level
-    while (currentTime < duration - 5000) {
-      // Stop spawning 5 seconds before end
-      // Determine meteor type for this wave
-      let meteorType;
-      if (allowLarge && Math.random() < 0.2) {
-        meteorType = 2; // Large meteor (20% chance if allowed)
-      } else if (allowMedium && Math.random() < 0.35) {
-        meteorType = 1; // Medium meteor (35% chance if allowed)
-      } else {
-        meteorType = 0; // Small meteor (default)
-      }
-
-      // Calculate wave properties
-      const baseCount = meteorType === 2 ? 1 : meteorType === 1 ? 2 : 4;
-      const count = Math.ceil(baseCount * countMultiplier);
-      const spacing = meteorType === 2 ? 2000 : meteorType === 1 ? 1000 : 500;
-
-      waves.push({
-        type: meteorType,
-        count: count,
-        startTime: currentTime,
-        spacing: spacing / spawnMultiplier,
-      });
-
-      // Calculate next wave start time
-      const waveLength = (count * spacing) / spawnMultiplier + 1000;
-      currentTime += waveLength;
-    }
-
-    levels.push({
-      name: `Level ${levelIndex}`,
-      duration: duration,
-      waves: waves,
-    });
-  }
-
-  return levels;
-}
+// Add to game constants
+const LEVELS = [
+  {
+    name: "Level 1",
+    duration: 30000, // 30 seconds
+    waves: [
+      { type: 0, count: 3, startTime: 1000, spacing: 1000 }, // 3 small meteors at 1s
+      { type: 0, count: 5, startTime: 8000, spacing: 800 }, // 5 small meteors at 8s
+      { type: 1, count: 2, startTime: 15000, spacing: 2000 }, // 2 medium meteors at 15s
+      { type: 0, count: 4, startTime: 20000, spacing: 500 }, // 4 small meteors at 20s
+      { type: 1, count: 3, startTime: 25000, spacing: 1500 }, // 3 medium meteors at 25s
+    ],
+  },
+  {
+    name: "Level 2",
+    duration: 45000, // 45 seconds
+    waves: [
+      { type: 1, count: 3, startTime: 2000, spacing: 1200 }, // 3 medium meteors at 2s
+      { type: 0, count: 6, startTime: 10000, spacing: 400 }, // 6 small meteors at 10s
+      { type: 2, count: 1, startTime: 18000, spacing: 0 }, // 1 large meteor at 18s
+      { type: 1, count: 4, startTime: 25000, spacing: 1000 }, // 4 medium meteors at 25s
+      { type: 2, count: 2, startTime: 35000, spacing: 2000 }, // 2 large meteors at 35s
+      { type: 0, count: 8, startTime: 40000, spacing: 300 }, // 8 small meteors at 40s
+    ],
+  },
+];
 
 const GAME_STATES = {
   LOADING: "loading",
