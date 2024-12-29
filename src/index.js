@@ -52,9 +52,9 @@ function generateLevels() {
     const baseSpawnMultiplier = 1 + i * levelSpawnMultiplier;
     const baseCountMultiplier = 1 + i * levelCountMultiplier;
 
-    // Meteor type availability
-    const allowMedium = levelIndex >= 3;
-    const allowLarge = levelIndex >= 5;
+    // Meteor type availability - now available from start but with lower probability
+    const mediumUnlockFactor = Math.min(1, (levelIndex - 1) / 2); // Gradually increases to 1 by level 3
+    const largeUnlockFactor = Math.min(1, (levelIndex - 2) / 3);  // Gradually increases to 1 by level 5
 
     const waves = [];
     let currentTime = 500;
@@ -63,7 +63,7 @@ function generateLevels() {
     while (currentTime < duration) {
       // Calculate progress through level (0 to 1)
       const levelProgress = currentTime / duration;
-
+      
       // Increase difficulty within level (xxx% harder by end of level)
       const intraLevelMultiplier = 1 + levelProgress * 1.2;
 
@@ -71,12 +71,14 @@ function generateLevels() {
       const spawnMultiplier = baseSpawnMultiplier * intraLevelMultiplier;
       const countMultiplier = baseCountMultiplier * intraLevelMultiplier;
 
-      // Adjusted meteor type probabilities based on level progress
+      // Progressive meteor type probabilities based on level progress AND unlock factors
+      const dangerFactor = levelProgress * 0.5; // Increases danger as level progresses
       let meteorType;
-      if (allowLarge && Math.random() < 0.15 + levelProgress * 0.1) {
-        meteorType = 2; // Large meteor (15-25% chance if allowed)
-      } else if (allowMedium && Math.random() < 0.25 + levelProgress * 0.15) {
-        meteorType = 1; // Medium meteor (25-40% chance if allowed)
+      
+      if (Math.random() < 0.15 * largeUnlockFactor * (1 + dangerFactor)) {
+        meteorType = 2; // Large meteor (probability increases with progress)
+      } else if (Math.random() < 0.25 * mediumUnlockFactor * (1 + dangerFactor)) {
+        meteorType = 1; // Medium meteor (probability increases with progress)
       } else {
         meteorType = 0; // Small meteor (default)
       }
