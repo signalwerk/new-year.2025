@@ -1213,9 +1213,14 @@ class Game {
   }
 
   createDefenseOptions() {
+    const optionsAreaY = GAME_HEIGHT - PADDING_BOTTOM + 20; // Position below game grid
+    const spacing = 20; // Space between options
+    const totalWidth = (SPOT_SIZE + spacing) * DEFENSE_TYPES.length - spacing;
+    const startX = (GAME_WIDTH - totalWidth) / 2; // Center the options horizontally
+
     return DEFENSE_TYPES.map((type, index) => {
-      const y = PADDING_TOP + 50 + index * (SPOT_SIZE + 30); // Space them vertically with room for cost
-      const x = 10; // Align to left side
+      const x = startX + index * (SPOT_SIZE + spacing);
+      const y = optionsAreaY;
       return new DefenseOption(type, x, y);
     });
   }
