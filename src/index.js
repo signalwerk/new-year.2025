@@ -152,14 +152,14 @@ const METEOR_TYPES = [
     id: 0,
     name: "Small",
     color: "#FF9999",
-    health: 30,
+    health: 40,
     speed: 0.05,
     damageRate: 30,
     rotateRate: 0.0005,
     wiggleRate: 0.001,
     wiggleAmount: 7,
     sizeMultiplier: { x: 1.0, y: 1.0 },
-    coinReward: 20, // 1 coin
+    coinReward: 10, // 1 coin
   },
   {
     id: 1,
@@ -172,7 +172,7 @@ const METEOR_TYPES = [
     wiggleRate: 0.03,
     wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
-    coinReward: 40, // 2 coins
+    coinReward: 15, // 2 coins
   },
   {
     id: 2,
@@ -185,7 +185,7 @@ const METEOR_TYPES = [
     wiggleRate: 0.03,
     wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
-    coinReward: 60, // 3 coins
+    coinReward: 20, // 3 coins
   },
 ];
 
