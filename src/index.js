@@ -3,8 +3,8 @@ const GAME_WIDTH = 360; // Base width, will be scaled
 const GAME_HEIGHT = 640; // 16:9 ratio
 const LANES = 6;
 const PADDING_TOP = 80; // More space for score/level
-const PADDING_BOTTOM = 100; // More space for controls/UI
-const PADDING_LEFT = 80;
+const PADDING_BOTTOM = 90; // More space for controls/UI
+const PADDING_LEFT = 40;
 const PADDING_RIGHT = 40;
 
 const INITIAL_CURRENCY = 500;
@@ -63,19 +63,19 @@ function generateLevels() {
     while (currentTime < duration) {
       // Calculate progress through level (0 to 1)
       const levelProgress = currentTime / duration;
-      
+
       // Increase difficulty within level (x% harder by end of level)
-      const intraLevelMultiplier = 1 + (levelProgress * 0.4);
-      
+      const intraLevelMultiplier = 1 + levelProgress * 0.4;
+
       // Combined multipliers for this wave
       const spawnMultiplier = baseSpawnMultiplier * intraLevelMultiplier;
       const countMultiplier = baseCountMultiplier * intraLevelMultiplier;
 
       // Adjusted meteor type probabilities based on level progress
       let meteorType;
-      if (allowLarge && Math.random() < (0.15 + levelProgress * 0.1)) {
+      if (allowLarge && Math.random() < 0.15 + levelProgress * 0.1) {
         meteorType = 2; // Large meteor (15-25% chance if allowed)
-      } else if (allowMedium && Math.random() < (0.25 + levelProgress * 0.15)) {
+      } else if (allowMedium && Math.random() < 0.25 + levelProgress * 0.15) {
         meteorType = 1; // Medium meteor (25-40% chance if allowed)
       } else {
         meteorType = 0; // Small meteor (default)
