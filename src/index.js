@@ -40,43 +40,51 @@ const LEVELS = generateLevels();
 function generateLevels() {
   const levels = [];
 
-  // Reduced multipliers for more gradual scaling
-  const levelSpawnMultiplier = 0.08; // Reduced from 0.15
-  const levelCountMultiplier = 0.05; // Reduced from 0.1
+  // Base multipliers for level-to-level scaling
+  const levelSpawnMultiplier = 0.3;
+  const levelCountMultiplier = 0.2;
 
   for (let i = 0; i < 10; i++) {
     const levelIndex = i + 1;
     const duration = 150000; // 2min 30sec in milliseconds
 
-    // More gradual difficulty multipliers
-    const spawnMultiplier = 1 + i * 0.15 * levelSpawnMultiplier; // Slower increase in wave frequency
-    const countMultiplier = 1 + i * 0.1 * levelCountMultiplier; // Slower increase in meteors per wave
+    // Level-wide difficulty multipliers
+    const baseSpawnMultiplier = 1 + i * levelSpawnMultiplier;
+    const baseCountMultiplier = 1 + i * levelCountMultiplier;
 
-    // Adjusted meteor type probabilities
-    const allowMedium = levelIndex >= 3; // Medium meteors start at level 3 (was 2)
-    const allowLarge = levelIndex >= 5; // Large meteors start at level 5 (was 4)
+    // Meteor type availability
+    const allowMedium = levelIndex >= 3;
+    const allowLarge = levelIndex >= 5;
 
     const waves = [];
-    let currentTime = 500; // Start first wave at 2 seconds (increased from 500)
+    let currentTime = 500;
 
-    // Generate waves for this level
+    // Track progress through level for intra-level scaling
     while (currentTime < duration) {
-      // Adjusted meteor type probabilities
+      // Calculate progress through level (0 to 1)
+      const levelProgress = currentTime / duration;
+      
+      // Increase difficulty within level (x% harder by end of level)
+      const intraLevelMultiplier = 1 + (levelProgress * 0.4);
+      
+      // Combined multipliers for this wave
+      const spawnMultiplier = baseSpawnMultiplier * intraLevelMultiplier;
+      const countMultiplier = baseCountMultiplier * intraLevelMultiplier;
+
+      // Adjusted meteor type probabilities based on level progress
       let meteorType;
-      if (allowLarge && Math.random() < 0.15) {
-        // Reduced from 0.2
-        meteorType = 2; // Large meteor (15% chance if allowed)
-      } else if (allowMedium && Math.random() < 0.25) {
-        // Reduced from 0.35
-        meteorType = 1; // Medium meteor (25% chance if allowed)
+      if (allowLarge && Math.random() < (0.15 + levelProgress * 0.1)) {
+        meteorType = 2; // Large meteor (15-25% chance if allowed)
+      } else if (allowMedium && Math.random() < (0.25 + levelProgress * 0.15)) {
+        meteorType = 1; // Medium meteor (25-40% chance if allowed)
       } else {
         meteorType = 0; // Small meteor (default)
       }
 
-      // Adjusted base counts and spacing
-      const baseCount = meteorType === 2 ? 1 : meteorType === 1 ? 2 : 3; // Reduced small meteor count from 4 to 3
+      // Base counts and spacing
+      const baseCount = meteorType === 2 ? 1 : meteorType === 1 ? 2 : 3;
       const count = Math.ceil(baseCount * countMultiplier);
-      const spacing = meteorType === 2 ? 2500 : meteorType === 1 ? 1500 : 1000; // Increased all spacings
+      const spacing = meteorType === 2 ? 2500 : meteorType === 1 ? 1500 : 1000;
 
       waves.push({
         type: meteorType,
@@ -85,9 +93,9 @@ function generateLevels() {
         spacing: spacing / spawnMultiplier,
       });
 
-      // Add more time between waves
+      // Wave timing
       const waveLength = (count * spacing) / spawnMultiplier;
-      const breakTime = 2000; // 2 second break between waves
+      const breakTime = Math.max(2000 - levelProgress * 1000, 500); // Breaks get shorter
       currentTime += waveLength + breakTime;
     }
 
