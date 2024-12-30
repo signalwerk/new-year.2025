@@ -37,9 +37,9 @@ const COLORS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.7,
+  levelVersion: 1.8,
   baseDuration: 30000, // Base duration in ms
-  durationIncrease: 4000, // How much to increase duration per level (15s)
+  durationIncrease: 0, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
   difficultyMultiplier: 0.85, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
@@ -201,7 +201,7 @@ const DEFENSE_TYPES = [
     id: 1,
     name: "Medium",
     color: "#2196F3",
-    cost: 150,
+    cost: 140,
     damage: 20,
     health: 100,
   },
@@ -209,7 +209,7 @@ const DEFENSE_TYPES = [
     id: 2,
     name: "Strong",
     color: "#9C27B0",
-    cost: 200,
+    cost: 180,
     damage: 30,
     health: 100,
   },
@@ -1031,6 +1031,9 @@ class Game {
     // Add high score properties
     this.currentScore = 0;
     this.highScore = this.loadHighScore();
+
+    // Add level high score property
+    this.levelHighScore = this.loadLevelHighScore();
   }
 
   initializeCanvas() {
@@ -1089,10 +1092,6 @@ class Game {
           if (coin.isClicked(x, y)) {
             this.currency += coin.value;
             this.currentScore += coin.value; // Add to current score
-            if (this.currentScore > this.highScore) {
-              this.highScore = this.currentScore;
-              this.saveHighScore();
-            }
             this.coins.splice(i, 1);
             coinCollected = true;
             break;
@@ -1262,9 +1261,19 @@ class Game {
       if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
         this.lives--;
         if (this.lives <= 0) {
+          // Update high score when game ends
+          if (this.currentScore > this.highScore) {
+            this.highScore = this.currentScore;
+            this.saveHighScore();
+          }
+          // Update level high score when game ends
+          if (this.levelManager.currentLevel > this.levelHighScore) {
+            this.levelHighScore = this.levelManager.currentLevel;
+            this.saveLevelHighScore();
+          }
           this.gameState = GAME_STATES.GAME_OVER;
         } else {
-          this.gameState = GAME_STATES.LIFE_LOST; // Show life lost screen
+          this.gameState = GAME_STATES.LIFE_LOST;
         }
         return false;
       }
@@ -1380,17 +1389,19 @@ class Game {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
 
-      // Draw scores
+      // Draw scores with level information
       this.ctx.fillStyle = COLORS.TEXT;
       this.ctx.font = FONT.LARGE.full;
       this.ctx.textAlign = "center";
       this.ctx.fillText(
-        `Final Score: ${this.currentScore}`,
+        `Final Score: ${this.currentScore} (Level ${
+          this.levelManager.currentLevel + 1
+        })`,
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 + 50,
       );
       this.ctx.fillText(
-        `High Score: ${this.highScore}`,
+        `High Score: ${this.highScore} (Level ${this.levelHighScore + 1})`,
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 + 80,
       );
@@ -1596,12 +1607,12 @@ class Game {
 
   // Add after constructor
   loadHighScore() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY + "_coins");
     return saved ? parseInt(saved, 0) : 0;
   }
 
   saveHighScore() {
-    localStorage.setItem(STORAGE_KEY, this.highScore.toString());
+    localStorage.setItem(STORAGE_KEY + "_coins", this.highScore.toString());
   }
 
   // Add new method to draw version
@@ -1610,6 +1621,20 @@ class Game {
     this.ctx.font = "11px Arial"; // Smaller font size
     this.ctx.textAlign = "left";
     this.ctx.fillText(`v${LEVEL_GEN_CONFIG.levelVersion}`, 5, GAME_HEIGHT - 5); // Position in bottom left corner
+  }
+
+  // Add new method to load level high score
+  loadLevelHighScore() {
+    const saved = localStorage.getItem(STORAGE_KEY + "_level");
+    return saved ? parseInt(saved, 0) : 0;
+  }
+
+  // Add new method to save level high score
+  saveLevelHighScore() {
+    localStorage.setItem(
+      STORAGE_KEY + "_level",
+      this.levelHighScore.toString(),
+    );
   }
 }
 
