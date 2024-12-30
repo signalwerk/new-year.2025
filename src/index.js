@@ -1305,6 +1305,7 @@ class Game {
       this.drawLoadingScreen();
     } else if (this.gameState === GAME_STATES.MENU) {
       this.startButton.draw(this.ctx);
+      this.drawVersion();
     } else if (this.gameState === GAME_STATES.PLAYING) {
       // Draw currency and lives
       this.drawCurrency();
@@ -1326,6 +1327,8 @@ class Game {
       // Draw coins
       const currentTime = performance.now();
       this.coins.forEach((coin) => coin.draw(this.ctx, currentTime));
+
+      this.drawVersion();
     } else if (this.gameState === GAME_STATES.LIFE_LOST) {
       // Draw the life lost screen
       this.drawCurrency();
@@ -1348,11 +1351,15 @@ class Game {
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2,
       );
+
+      this.drawVersion();
     } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
       this.levelCompleteText.draw(this.ctx);
       this.nextLevelButton.draw(this.ctx);
+      this.drawVersion();
     } else if (this.gameState === GAME_STATES.GAME_COMPLETE) {
       this.gameCompleteText.draw(this.ctx);
+      this.drawVersion();
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
@@ -1371,6 +1378,8 @@ class Game {
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 + 80,
       );
+
+      this.drawVersion();
     }
   }
 
@@ -1577,6 +1586,14 @@ class Game {
 
   saveHighScore() {
     localStorage.setItem(STORAGE_KEY, this.highScore.toString());
+  }
+
+  // Add new method to draw version
+  drawVersion() {
+    this.ctx.fillStyle = COLORS.TEXT;
+    this.ctx.font = "11px Arial"; // Smaller font size
+    this.ctx.textAlign = "left";
+    this.ctx.fillText("v1.1", 5, GAME_HEIGHT - 5); // Position in bottom left corner
   }
 }
 
