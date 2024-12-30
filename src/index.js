@@ -45,44 +45,47 @@ const LEVEL_GEN_CONFIG = {
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
     start: { small: 1, medium: 0, large: 0 },
-    end: { small: 0.65, medium: 0.25, large: 0.1 },
+    end: { small: 0.6, medium: 0.2, large: 0.2 },
   },
 
   // Spawn timing
-  minSpawnGap: 900, // Minimum ms between meteors
+  minSpawnGap: 900, // Minimum ms between meteors at start
   maxSpawnGap: 1500, // Maximum ms between meteors at start
-  minSpawnGapEnd: 300, // Minimum gap by end of level
+
+  minSpawnGapEnd: 450, // Minimum gap by end of level
+  maxSpawnGapEnd: 900, // Maximum gap by end of level (NEW)
 
   // Difficulty scaling
   difficultyRamp: 1.25, // Multiplier for difficulty between levels
-  waveDuration: 6000, // Duration of attack waves in ms
-  waveGap: 3200, // Gap between waves in ms
+  waveDuration: 6000, // Initial duration of attack waves in ms
+  waveDurationEnd: 4000, // End duration of attack waves in ms (NEW)
+  waveGap: 3200, // Initial gap between waves in ms
+  waveGapEnd: 1600, // End gap between waves in ms (NEW)
 };
 
 function generateLevels(config = LEVEL_GEN_CONFIG) {
   const levels = [];
-  const diff = config.difficultyMultiplier; // Get difficulty multiplier
+  const diff = config.difficultyMultiplier;
 
   for (let levelNum = 0; levelNum < config.maxLevels; levelNum++) {
-    // Adjust duration based on difficulty (harder = shorter levels)
-    const duration =
-      (config.baseDuration + config.durationIncrease * levelNum) /
-      Math.sqrt(diff);
+    const duration = (config.baseDuration + config.durationIncrease * levelNum) / Math.sqrt(diff);
     const meteors = [];
-    let currentTime = 1000; // Start first meteor at 1s
+    let currentTime = 1000;
 
-    // Calculate difficulty multiplier for this level (harder = more difficult scaling)
     const levelDifficulty = Math.pow(config.difficultyRamp, levelNum) * diff;
 
     while (currentTime < duration - 2000) {
-      // Stop spawning 2s before end
-      // Generate a wave of meteors
-      const waveEndTime = currentTime + config.waveDuration / Math.sqrt(diff); // Shorter waves at higher difficulty
+      const levelProgress = currentTime / duration;
+      const adjustedWaveDuration = lerp(
+        config.waveDuration / Math.sqrt(diff),
+        config.waveDurationEnd / Math.sqrt(diff),
+        levelProgress
+      );
+      
+      const waveEndTime = currentTime + adjustedWaveDuration;
 
       while (currentTime < waveEndTime) {
-        const waveProgress =
-          (currentTime - (waveEndTime - config.waveDuration)) /
-          config.waveDuration;
+        const waveProgress = (currentTime - (waveEndTime - adjustedWaveDuration)) / adjustedWaveDuration;
 
         // Adjust weights based on difficulty (harder = more medium/large meteors)
         const weights = {
@@ -117,26 +120,30 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
 
         // Adjust spawn gaps based on difficulty (harder = faster spawns)
         const minGap = lerp(
-          config.maxSpawnGap / diff,
+          config.minSpawnGap / diff,
           config.minSpawnGapEnd / diff,
           waveProgress,
         );
         const maxGap = lerp(
           config.maxSpawnGap / diff,
-          (config.minSpawnGapEnd * 2) / diff,
+          config.maxSpawnGapEnd / diff,
           waveProgress,
         );
         currentTime += Math.random() * (maxGap - minGap) + minGap;
       }
 
-      // Adjust wave gap based on difficulty (harder = shorter gaps)
-      currentTime += config.waveGap / diff;
+      const adjustedWaveGap = lerp(
+        config.waveGap / diff,
+        config.waveGapEnd / diff,
+        levelProgress
+      );
+      currentTime += adjustedWaveGap;
     }
 
     levels.push({
       name: `Level ${levelNum + 1}`,
       duration: duration,
-      meteors: meteors.sort((a, b) => a.startTime - b.startTime), // Sort by start time
+      meteors: meteors.sort((a, b) => a.startTime - b.startTime),
     });
   }
 
@@ -1593,7 +1600,7 @@ class Game {
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = "11px Arial"; // Smaller font size
     this.ctx.textAlign = "left";
-    this.ctx.fillText("v1.1", 5, GAME_HEIGHT - 5); // Position in bottom left corner
+    this.ctx.fillText("v1.2", 5, GAME_HEIGHT - 5); // Position in bottom left corner
   }
 }
 
