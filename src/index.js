@@ -37,24 +37,24 @@ const COLORS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.4,
+  levelVersion: 1.5,
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 5000, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
-  difficultyMultiplier: 0.9, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
+  difficultyMultiplier: 0.85, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
     start: { small: 1, medium: 0, large: 0 },
-    end: { small: 0.3, medium: 0.3, large: 0.4 },
+    end: { small: 0.1, medium: 0.4, large: 0.5 },
   },
 
   // Spawn timing
   minSpawnGap: 900, // Minimum ms between meteors at start
-  minSpawnGapEnd: 200, // Minimum gap by end of level
+  minSpawnGapEnd: 100, // Minimum gap by end of level
 
   maxSpawnGap: 1500, // Maximum ms between meteors at start
-  maxSpawnGapEnd: 400, // Maximum gap by end of level (NEW)
+  maxSpawnGapEnd: 100, // Maximum gap by end of level (NEW)
 
   // Difficulty scaling
   difficultyRamp: 1.25, // Multiplier for difficulty between levels
@@ -79,7 +79,7 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
 
     while (currentTime < duration - 2000) {
       const levelProgress = currentTime / duration;
-      const adjustedWaveDuration = lerp(
+      const adjustedWaveDuration = quadraticLerp(
         config.waveDuration / Math.sqrt(diff),
         config.waveDurationEnd / Math.sqrt(diff),
         levelProgress,
@@ -124,12 +124,12 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
         });
 
         // Adjust spawn gaps based on difficulty (harder = faster spawns)
-        const minGap = lerp(
+        const minGap = quadraticLerp(
           config.minSpawnGap / diff,
           config.minSpawnGapEnd / diff,
           waveProgress,
         );
-        const maxGap = lerp(
+        const maxGap = quadraticLerp(
           config.maxSpawnGap / diff,
           config.maxSpawnGapEnd / diff,
           waveProgress,
@@ -137,7 +137,7 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
         currentTime += Math.random() * (maxGap - minGap) + minGap;
       }
 
-      const adjustedWaveGap = lerp(
+      const adjustedWaveGap = quadraticLerp(
         config.waveGap / diff,
         config.waveGapEnd / diff,
         levelProgress,
@@ -158,6 +158,10 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
 // Helper function to linearly interpolate between two values
 function lerp(start, end, progress) {
   return start + (end - start) * progress;
+}
+
+function quadraticLerp(start, end, progress) {
+  return start + (end - start) * progress * progress;
 }
 
 // Helper function to select meteor type based on weights
