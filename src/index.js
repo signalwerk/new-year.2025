@@ -35,68 +35,11 @@ const COLORS = {
   SELECTION: "rgba(255,80,80,0.7)",
 };
 
-// Add to game constants
-const LEVELS_OLD = [
-  {
-    name: "Level 1",
-    duration: 30000, // 30 seconds
-    meteors: [
-      { type: 0, lane: 2, startTime: 1000 }, // Small meteor, middle lane, 1s
-      { type: 0, lane: 1, startTime: 2000 }, // Small meteor, lane 1, 2s
-      { type: 0, lane: 3, startTime: 3000 }, // Small meteor, lane 3, 3s
-      { type: 0, lane: 0, startTime: 8000 }, // Small meteor, lane 0, 8s
-      { type: 0, lane: 4, startTime: 8800 }, // Small meteor, lane 4, 8.8s
-      { type: 0, lane: 2, startTime: 9600 }, // Small meteor, lane 2, 9.6s
-      { type: 0, lane: 5, startTime: 10400 }, // Small meteor, lane 5, 10.4s
-      { type: 0, lane: 1, startTime: 11200 }, // Small meteor, lane 1, 11.2s
-      { type: 1, lane: 3, startTime: 15000 }, // Medium meteor, lane 3, 15s
-      { type: 1, lane: 2, startTime: 17000 }, // Medium meteor, lane 2, 17s
-      { type: 0, lane: 0, startTime: 20000 }, // Small meteor, lane 0, 20s
-      { type: 0, lane: 1, startTime: 20500 }, // Small meteor, lane 1, 20.5s
-      { type: 0, lane: 2, startTime: 21000 }, // Small meteor, lane 2, 21s
-      { type: 0, lane: 3, startTime: 21500 }, // Small meteor, lane 3, 21.5s
-      { type: 1, lane: 4, startTime: 25000 }, // Medium meteor, lane 4, 25s
-      { type: 1, lane: 2, startTime: 26500 }, // Medium meteor, lane 2, 26.5s
-      { type: 1, lane: 0, startTime: 28000 }, // Medium meteor, lane 0, 28s
-    ],
-  },
-  {
-    name: "Level 2",
-    duration: 45000, // 45 seconds
-    meteors: [
-      { type: 1, lane: 2, startTime: 2000 }, // Medium meteor, lane 2, 2s
-      { type: 1, lane: 4, startTime: 3200 }, // Medium meteor, lane 4, 3.2s
-      { type: 1, lane: 0, startTime: 4400 }, // Medium meteor, lane 0, 4.4s
-      { type: 0, lane: 1, startTime: 10000 }, // Small meteor, lane 1, 10s
-      { type: 0, lane: 3, startTime: 10400 }, // Small meteor, lane 3, 10.4s
-      { type: 0, lane: 5, startTime: 10800 }, // Small meteor, lane 5, 10.8s
-      { type: 0, lane: 0, startTime: 11200 }, // Small meteor, lane 0, 11.2s
-      { type: 0, lane: 2, startTime: 11600 }, // Small meteor, lane 2, 11.6s
-      { type: 0, lane: 4, startTime: 12000 }, // Small meteor, lane 4, 12s
-      { type: 2, lane: 3, startTime: 18000 }, // Large meteor, lane 3, 18s
-      { type: 1, lane: 1, startTime: 25000 }, // Medium meteor, lane 1, 25s
-      { type: 1, lane: 4, startTime: 26000 }, // Medium meteor, lane 4, 26s
-      { type: 1, lane: 2, startTime: 27000 }, // Medium meteor, lane 2, 27s
-      { type: 1, lane: 5, startTime: 28000 }, // Medium meteor, lane 5, 28s
-      { type: 2, lane: 3, startTime: 35000 }, // Large meteor, lane 3, 35s
-      { type: 2, lane: 2, startTime: 37000 }, // Large meteor, lane 2, 37s
-      { type: 0, lane: 0, startTime: 40000 }, // Small meteor, lane 0, 40s
-      { type: 0, lane: 1, startTime: 40300 }, // Small meteor, lane 1, 40.3s
-      { type: 0, lane: 2, startTime: 40600 }, // Small meteor, lane 2, 40.6s
-      { type: 0, lane: 3, startTime: 40900 }, // Small meteor, lane 3, 40.9s
-      { type: 0, lane: 4, startTime: 41200 }, // Small meteor, lane 4, 41.2s
-      { type: 0, lane: 5, startTime: 41500 }, // Small meteor, lane 5, 41.5s
-      { type: 0, lane: 3, startTime: 41800 }, // Small meteor, lane 3, 41.8s
-      { type: 0, lane: 2, startTime: 42100 }, // Small meteor, lane 2, 42.1s
-    ],
-  },
-];
-
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 5000, // How much to increase duration per level (15s)
-  maxLevels: 20, // How many levels to generate
+  maxLevels: 30, // How many levels to generate
   difficultyMultiplier: 0.75, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
   // Meteor type weights (chance of spawning) at start and end of level
