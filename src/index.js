@@ -35,17 +35,17 @@ const COLORS = {
 };
 
 // Add to game constants
-const LEVELS = [
+const LEVELS_OLD = [
   {
     name: "Level 1",
     duration: 30000, // 30 seconds
     meteors: [
-      { type: 0, lane: 2, startTime: 1000 },  // Small meteor, middle lane, 1s
-      { type: 0, lane: 1, startTime: 2000 },  // Small meteor, lane 1, 2s
-      { type: 0, lane: 3, startTime: 3000 },  // Small meteor, lane 3, 3s
-      { type: 0, lane: 0, startTime: 8000 },  // Small meteor, lane 0, 8s
-      { type: 0, lane: 4, startTime: 8800 },  // Small meteor, lane 4, 8.8s
-      { type: 0, lane: 2, startTime: 9600 },  // Small meteor, lane 2, 9.6s
+      { type: 0, lane: 2, startTime: 1000 }, // Small meteor, middle lane, 1s
+      { type: 0, lane: 1, startTime: 2000 }, // Small meteor, lane 1, 2s
+      { type: 0, lane: 3, startTime: 3000 }, // Small meteor, lane 3, 3s
+      { type: 0, lane: 0, startTime: 8000 }, // Small meteor, lane 0, 8s
+      { type: 0, lane: 4, startTime: 8800 }, // Small meteor, lane 4, 8.8s
+      { type: 0, lane: 2, startTime: 9600 }, // Small meteor, lane 2, 9.6s
       { type: 0, lane: 5, startTime: 10400 }, // Small meteor, lane 5, 10.4s
       { type: 0, lane: 1, startTime: 11200 }, // Small meteor, lane 1, 11.2s
       { type: 1, lane: 3, startTime: 15000 }, // Medium meteor, lane 3, 15s
@@ -57,15 +57,15 @@ const LEVELS = [
       { type: 1, lane: 4, startTime: 25000 }, // Medium meteor, lane 4, 25s
       { type: 1, lane: 2, startTime: 26500 }, // Medium meteor, lane 2, 26.5s
       { type: 1, lane: 0, startTime: 28000 }, // Medium meteor, lane 0, 28s
-    ]
+    ],
   },
   {
     name: "Level 2",
     duration: 45000, // 45 seconds
     meteors: [
-      { type: 1, lane: 2, startTime: 2000 },  // Medium meteor, lane 2, 2s
-      { type: 1, lane: 4, startTime: 3200 },  // Medium meteor, lane 4, 3.2s
-      { type: 1, lane: 0, startTime: 4400 },  // Medium meteor, lane 0, 4.4s
+      { type: 1, lane: 2, startTime: 2000 }, // Medium meteor, lane 2, 2s
+      { type: 1, lane: 4, startTime: 3200 }, // Medium meteor, lane 4, 3.2s
+      { type: 1, lane: 0, startTime: 4400 }, // Medium meteor, lane 0, 4.4s
       { type: 0, lane: 1, startTime: 10000 }, // Small meteor, lane 1, 10s
       { type: 0, lane: 3, startTime: 10400 }, // Small meteor, lane 3, 10.4s
       { type: 0, lane: 5, startTime: 10800 }, // Small meteor, lane 5, 10.8s
@@ -87,9 +87,131 @@ const LEVELS = [
       { type: 0, lane: 5, startTime: 41500 }, // Small meteor, lane 5, 41.5s
       { type: 0, lane: 3, startTime: 41800 }, // Small meteor, lane 3, 41.8s
       { type: 0, lane: 2, startTime: 42100 }, // Small meteor, lane 2, 42.1s
-    ]
-  }
+    ],
+  },
 ];
+
+// Level generation configuration options
+const LEVEL_GEN_CONFIG = {
+  baseDuration: 15000, // Base duration in ms (30s)
+  durationIncrease: 5000, // How much to increase duration per level (15s)
+  maxLevels: 10, // How many levels to generate
+
+  // Meteor type weights (chance of spawning) at start and end of level
+  meteorWeights: {
+    start: { small: 1, medium: 0, large: 0 },
+    end: { small: 0.5, medium: 0.4, large: 0.1 },
+  },
+
+  // Spawn timing
+  minSpawnGap: 800, // Minimum ms between meteors
+  maxSpawnGap: 2000, // Maximum ms between meteors at start
+  minSpawnGapEnd: 400, // Minimum gap by end of level
+
+  // Difficulty scaling
+  difficultyRamp: 1.2, // Multiplier for difficulty between levels
+  waveDuration: 8000, // Duration of attack waves in ms
+  waveGap: 4000, // Gap between waves in ms
+};
+
+function generateLevels(config = LEVEL_GEN_CONFIG) {
+  const levels = [];
+
+  for (let levelNum = 0; levelNum < config.maxLevels; levelNum++) {
+    const duration = config.baseDuration + config.durationIncrease * levelNum;
+    const meteors = [];
+    let currentTime = 1000; // Start first meteor at 1s
+
+    // Calculate difficulty multiplier for this level
+    const levelDifficulty = Math.pow(config.difficultyRamp, levelNum);
+
+    while (currentTime < duration - 2000) {
+      // Stop spawning 2s before end
+      // Generate a wave of meteors
+      const waveEndTime = currentTime + config.waveDuration;
+
+      while (currentTime < waveEndTime) {
+        // Calculate progress through the wave (0 to 1)
+        const waveProgress =
+          (currentTime - (waveEndTime - config.waveDuration)) /
+          config.waveDuration;
+
+        // Interpolate meteor weights based on wave progress
+        const weights = {
+          small: lerp(
+            config.meteorWeights.start.small,
+            config.meteorWeights.end.small,
+            waveProgress,
+          ),
+          medium: lerp(
+            config.meteorWeights.start.medium,
+            config.meteorWeights.end.medium,
+            waveProgress,
+          ),
+          large: lerp(
+            config.meteorWeights.start.large,
+            config.meteorWeights.end.large,
+            waveProgress,
+          ),
+        };
+
+        // Select meteor type based on weights
+        const meteorType = selectMeteorType(weights);
+
+        // Select random lane
+        const lane = Math.floor(Math.random() * LANES);
+
+        meteors.push({
+          type: meteorType,
+          lane: lane,
+          startTime: Math.floor(currentTime),
+        });
+
+        // Calculate next spawn gap
+        const minGap = lerp(
+          config.maxSpawnGap,
+          config.minSpawnGapEnd,
+          waveProgress,
+        );
+        const maxGap = lerp(
+          config.maxSpawnGap,
+          config.minSpawnGapEnd * 2,
+          waveProgress,
+        );
+        currentTime += Math.random() * (maxGap - minGap) + minGap;
+      }
+
+      // Add gap between waves
+      currentTime += config.waveGap;
+    }
+
+    levels.push({
+      name: `Level ${levelNum + 1}`,
+      duration: duration,
+      meteors: meteors.sort((a, b) => a.startTime - b.startTime), // Sort by start time
+    });
+  }
+
+  return levels;
+}
+
+// Helper function to linearly interpolate between two values
+function lerp(start, end, progress) {
+  return start + (end - start) * progress;
+}
+
+// Helper function to select meteor type based on weights
+function selectMeteorType(weights) {
+  const total = weights.small + weights.medium + weights.large;
+  const random = Math.random() * total;
+
+  if (random < weights.small) return 0; // Small meteor
+  if (random < weights.small + weights.medium) return 1; // Medium meteor
+  return 2; // Large meteor
+}
+
+// Replace the existing LEVELS constant with generated levels
+const LEVELS = generateLevels();
 
 const GAME_STATES = {
   LOADING: "loading",
@@ -114,7 +236,7 @@ const DEFENSE_TYPES = [
     id: 1,
     name: "Medium",
     color: "#2196F3",
-    cost: 200,
+    cost: 150,
     damage: 20,
     health: 100,
   },
@@ -122,7 +244,7 @@ const DEFENSE_TYPES = [
     id: 2,
     name: "Strong",
     color: "#9C27B0",
-    cost: 300,
+    cost: 200,
     damage: 30,
     health: 100,
   },
@@ -795,9 +917,7 @@ class LevelManager {
       levelTime >= this.remainingMeteors[0].startTime
     ) {
       const meteorData = this.remainingMeteors.shift();
-      meteors.push(
-        new Meteor(meteorData.lane, METEOR_TYPES[meteorData.type])
-      );
+      meteors.push(new Meteor(meteorData.lane, METEOR_TYPES[meteorData.type]));
     }
 
     // Check if all meteors have been spawned
