@@ -37,31 +37,31 @@ const COLORS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.5,
+  levelVersion: 1.6,
   baseDuration: 30000, // Base duration in ms
-  durationIncrease: 5000, // How much to increase duration per level (15s)
+  durationIncrease: 4000, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
   difficultyMultiplier: 0.85, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
     start: { small: 1, medium: 0, large: 0 },
-    end: { small: 0.1, medium: 0.4, large: 0.5 },
+    end: { small: 0, medium: 0.4, large: 0.6 },
   },
 
   // Spawn timing
   minSpawnGap: 900, // Minimum ms between meteors at start
-  minSpawnGapEnd: 100, // Minimum gap by end of level
+  minSpawnGapEnd: 200, // Minimum gap by end of level
 
-  maxSpawnGap: 1500, // Maximum ms between meteors at start
-  maxSpawnGapEnd: 100, // Maximum gap by end of level (NEW)
+  maxSpawnGap: 1300, // Maximum ms between meteors at start
+  maxSpawnGapEnd: 200, // Maximum gap by end of level (NEW)
 
   // Difficulty scaling
   difficultyRamp: 1.25, // Multiplier for difficulty between levels
   waveDuration: 6000, // Initial duration of attack waves in ms
-  waveDurationEnd: 2000, // End duration of attack waves in ms (NEW)
+  waveDurationEnd: 1500, // End duration of attack waves in ms (NEW)
   waveGap: 3200, // Initial gap between waves in ms
-  waveGapEnd: 900, // End gap between waves in ms (NEW)
+  waveGapEnd: 400, // End gap between waves in ms (NEW)
 };
 
 function generateLevels(config = LEVEL_GEN_CONFIG) {
@@ -94,17 +94,17 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
 
         // Adjust weights based on difficulty (harder = more medium/large meteors)
         const weights = {
-          small: lerp(
+          small: quadraticLerp(
             config.meteorWeights.start.small,
             config.meteorWeights.end.small / diff, // Reduce small meteors at higher difficulty
             waveProgress,
           ),
-          medium: lerp(
+          medium: quadraticLerp(
             config.meteorWeights.start.medium,
             config.meteorWeights.end.medium * diff, // Increase medium meteors at higher difficulty
             waveProgress,
           ),
-          large: lerp(
+          large: quadraticLerp(
             config.meteorWeights.start.large,
             config.meteorWeights.end.large * diff, // Increase large meteors at higher difficulty
             waveProgress,
