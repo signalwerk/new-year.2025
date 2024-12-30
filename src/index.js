@@ -37,7 +37,7 @@ const COLORS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.6,
+  levelVersion: 1.7,
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 4000, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
@@ -46,7 +46,7 @@ const LEVEL_GEN_CONFIG = {
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
     start: { small: 1, medium: 0, large: 0 },
-    end: { small: 0, medium: 0.4, large: 0.6 },
+    end: { small: 0, medium: 0.35, large: 0.65 },
   },
 
   // Spawn timing
@@ -58,8 +58,8 @@ const LEVEL_GEN_CONFIG = {
 
   // Difficulty scaling
   difficultyRamp: 1.25, // Multiplier for difficulty between levels
-  waveDuration: 6000, // Initial duration of attack waves in ms
-  waveDurationEnd: 1500, // End duration of attack waves in ms (NEW)
+  waveDuration: 6200, // Initial duration of attack waves in ms
+  waveDurationEnd: 1200, // End duration of attack waves in ms (NEW)
   waveGap: 3200, // Initial gap between waves in ms
   waveGapEnd: 400, // End gap between waves in ms (NEW)
 };
@@ -234,7 +234,7 @@ const METEOR_TYPES = [
     id: 1,
     name: "Medium",
     color: "#FF4444",
-    health: 50,
+    health: 60,
     speed: 0.035,
     damageRate: 50,
     rotateRate: 0,
@@ -247,7 +247,7 @@ const METEOR_TYPES = [
     id: 2,
     name: "Large",
     color: "#FF0000",
-    health: 70,
+    health: 90,
     speed: 0.05,
     damageRate: 50,
     rotateRate: 0,
