@@ -2,8 +2,8 @@
 const GAME_WIDTH = 360; // Base width, will be scaled
 const GAME_HEIGHT = 640; // 16:9 ratio
 const LANES = 6;
-const PADDING_TOP = 80; // More space for score/level
-const PADDING_BOTTOM = 90; // More space for controls/UI
+const PADDING_TOP = 40; // More space for score/level
+const PADDING_BOTTOM = 100; // More space for controls/UI
 const PADDING_LEFT = 40;
 const PADDING_RIGHT = 40;
 
@@ -1331,30 +1331,28 @@ class Game {
   }
 
   drawCurrency() {
+    const currencyY = GAME_HEIGHT - PADDING_BOTTOM + 15; // Position below game grid
+
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.LARGE.full;
+    this.ctx.textAlign = "center";
+
+    // Draw currency centered below grid
+    this.ctx.fillText(`Currency: $${this.currency}`, GAME_WIDTH / 2, currencyY);
+
+    // Draw scores in top left corner
     this.ctx.textAlign = "left";
-
-    // Draw currency
-    this.ctx.fillText(
-      `Currency: $${this.currency}`,
-      PADDING_LEFT / 3,
-      (PADDING_TOP / 4) * 3,
-    );
-
-    // Draw current score
     this.ctx.fillText(
       `Score: ${this.currentScore}`,
       PADDING_LEFT / 3,
-      (PADDING_TOP / 4) * 2,
+      PADDING_TOP + 20,
     );
 
-    // Draw high score
-    this.ctx.fillText(
-      `High Score: ${this.highScore}`,
-      PADDING_LEFT / 3,
-      PADDING_TOP / 4,
-    );
+    // this.ctx.fillText(
+    //   `High Score: ${this.highScore}`,
+    //   PADDING_LEFT / 3,
+    //   (PADDING_TOP / 6) * 5,
+    // );
   }
 
   draw() {
@@ -1434,10 +1432,10 @@ class Game {
   }
 
   createDefenseOptions() {
-    const optionsAreaY = GAME_HEIGHT - PADDING_BOTTOM + 20; // Position below game grid
-    const spacing = 20; // Space between options
+    const optionsAreaY = GAME_HEIGHT - PADDING_BOTTOM + 30; // Move down to make room for currency
+    const spacing = 20;
     const totalWidth = (SPOT_SIZE + spacing) * DEFENSE_TYPES.length - spacing;
-    const startX = (GAME_WIDTH - totalWidth) / 2; // Center the options horizontally
+    const startX = (GAME_WIDTH - totalWidth) / 2;
 
     return DEFENSE_TYPES.map((type, index) => {
       const x = startX + index * (SPOT_SIZE + spacing);
@@ -1567,7 +1565,7 @@ class Game {
     const heartSize = 17;
     const spacing = 5;
     const startX = GAME_WIDTH - (heartSize + spacing) * INITIAL_LIVES;
-    const y = (PADDING_TOP / 4) * 3;
+    const y = PADDING_TOP + 20;
 
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.LARGE.full;
