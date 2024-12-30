@@ -945,6 +945,8 @@ class LevelManager {
   }
 }
 
+const STORAGE_KEY = "meteorDefenseHighScore";
+
 class Game {
   constructor() {
     this.canvas = document.getElementById("canvas");
@@ -1066,6 +1068,10 @@ class Game {
 
     // Add lives property
     this.lives = INITIAL_LIVES;
+
+    // Add high score properties
+    this.currentScore = 0;
+    this.highScore = this.loadHighScore();
   }
 
   initializeCanvas() {
@@ -1123,6 +1129,11 @@ class Game {
           const coin = this.coins[i];
           if (coin.isClicked(x, y)) {
             this.currency += coin.value;
+            this.currentScore += coin.value; // Add to current score
+            if (this.currentScore > this.highScore) {
+              this.highScore = this.currentScore;
+              this.saveHighScore();
+            }
             this.coins.splice(i, 1);
             coinCollected = true;
             break;
@@ -1174,6 +1185,7 @@ class Game {
     this.currency = INITIAL_CURRENCY;
     this.selectedDefense = null;
     this.lives = INITIAL_LIVES; // Reset lives when starting new game
+    this.currentScore = 0; // Reset current score
     this.levelManager.startLevel(0);
 
     // Reset defense grid
@@ -1301,7 +1313,9 @@ class Game {
     });
 
     // Update coins
-    this.coins = this.coins.filter((coin) => coin.update(currentTime));
+    this.coins = this.coins.filter((coin) => {
+      return coin.update(currentTime);
+    });
 
     // Update level manager
     this.levelManager.update(currentTime, this.meteors);
@@ -1320,10 +1334,26 @@ class Game {
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.LARGE.full;
     this.ctx.textAlign = "left";
+
+    // Draw currency
     this.ctx.fillText(
       `Currency: $${this.currency}`,
       PADDING_LEFT / 3,
       (PADDING_TOP / 4) * 3,
+    );
+
+    // Draw current score
+    this.ctx.fillText(
+      `Score: ${this.currentScore}`,
+      PADDING_LEFT / 3,
+      (PADDING_TOP / 4) * 2,
+    );
+
+    // Draw high score
+    this.ctx.fillText(
+      `High Score: ${this.highScore}`,
+      PADDING_LEFT / 3,
+      PADDING_TOP / 4,
     );
   }
 
@@ -1385,6 +1415,21 @@ class Game {
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       this.gameOverText.draw(this.ctx);
       this.retryButton.draw(this.ctx);
+
+      // Draw scores
+      this.ctx.fillStyle = COLORS.TEXT;
+      this.ctx.font = FONT.LARGE.full;
+      this.ctx.textAlign = "center";
+      this.ctx.fillText(
+        `Final Score: ${this.currentScore}`,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 50,
+      );
+      this.ctx.fillText(
+        `High Score: ${this.highScore}`,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 80,
+      );
     }
   }
 
@@ -1581,6 +1626,16 @@ class Game {
     this.gameState = GAME_STATES.PLAYING;
     // Clear any remaining meteors to give player a fresh start
     this.meteors = [];
+  }
+
+  // Add after constructor
+  loadHighScore() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? parseInt(saved, 0) : 0;
+  }
+
+  saveHighScore() {
+    localStorage.setItem(STORAGE_KEY, this.highScore.toString());
   }
 }
 
