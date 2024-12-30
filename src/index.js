@@ -93,64 +93,68 @@ const LEVELS_OLD = [
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  baseDuration: 15000, // Base duration in ms (30s)
+  baseDuration: 30000, // Base duration in ms
   durationIncrease: 5000, // How much to increase duration per level (15s)
-  maxLevels: 10, // How many levels to generate
+  maxLevels: 20, // How many levels to generate
+  difficultyMultiplier: 0.75, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
     start: { small: 1, medium: 0, large: 0 },
-    end: { small: 0.5, medium: 0.4, large: 0.1 },
+    end: { small: 0.65, medium: 0.25, large: 0.1 },
   },
 
   // Spawn timing
-  minSpawnGap: 800, // Minimum ms between meteors
-  maxSpawnGap: 2000, // Maximum ms between meteors at start
-  minSpawnGapEnd: 400, // Minimum gap by end of level
+  minSpawnGap: 1000, // Minimum ms between meteors
+  maxSpawnGap: 1500, // Maximum ms between meteors at start
+  minSpawnGapEnd: 500, // Minimum gap by end of level
 
   // Difficulty scaling
-  difficultyRamp: 1.2, // Multiplier for difficulty between levels
-  waveDuration: 8000, // Duration of attack waves in ms
-  waveGap: 4000, // Gap between waves in ms
+  difficultyRamp: 1.15, // Multiplier for difficulty between levels
+  waveDuration: 6000, // Duration of attack waves in ms
+  waveGap: 3200, // Gap between waves in ms
 };
 
 function generateLevels(config = LEVEL_GEN_CONFIG) {
   const levels = [];
+  const diff = config.difficultyMultiplier; // Get difficulty multiplier
 
   for (let levelNum = 0; levelNum < config.maxLevels; levelNum++) {
-    const duration = config.baseDuration + config.durationIncrease * levelNum;
+    // Adjust duration based on difficulty (harder = shorter levels)
+    const duration =
+      (config.baseDuration + config.durationIncrease * levelNum) /
+      Math.sqrt(diff);
     const meteors = [];
     let currentTime = 1000; // Start first meteor at 1s
 
-    // Calculate difficulty multiplier for this level
-    const levelDifficulty = Math.pow(config.difficultyRamp, levelNum);
+    // Calculate difficulty multiplier for this level (harder = more difficult scaling)
+    const levelDifficulty = Math.pow(config.difficultyRamp, levelNum) * diff;
 
     while (currentTime < duration - 2000) {
       // Stop spawning 2s before end
       // Generate a wave of meteors
-      const waveEndTime = currentTime + config.waveDuration;
+      const waveEndTime = currentTime + config.waveDuration / Math.sqrt(diff); // Shorter waves at higher difficulty
 
       while (currentTime < waveEndTime) {
-        // Calculate progress through the wave (0 to 1)
         const waveProgress =
           (currentTime - (waveEndTime - config.waveDuration)) /
           config.waveDuration;
 
-        // Interpolate meteor weights based on wave progress
+        // Adjust weights based on difficulty (harder = more medium/large meteors)
         const weights = {
           small: lerp(
             config.meteorWeights.start.small,
-            config.meteorWeights.end.small,
+            config.meteorWeights.end.small / diff, // Reduce small meteors at higher difficulty
             waveProgress,
           ),
           medium: lerp(
             config.meteorWeights.start.medium,
-            config.meteorWeights.end.medium,
+            config.meteorWeights.end.medium * diff, // Increase medium meteors at higher difficulty
             waveProgress,
           ),
           large: lerp(
             config.meteorWeights.start.large,
-            config.meteorWeights.end.large,
+            config.meteorWeights.end.large * diff, // Increase large meteors at higher difficulty
             waveProgress,
           ),
         };
@@ -167,22 +171,22 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
           startTime: Math.floor(currentTime),
         });
 
-        // Calculate next spawn gap
+        // Adjust spawn gaps based on difficulty (harder = faster spawns)
         const minGap = lerp(
-          config.maxSpawnGap,
-          config.minSpawnGapEnd,
+          config.maxSpawnGap / diff,
+          config.minSpawnGapEnd / diff,
           waveProgress,
         );
         const maxGap = lerp(
-          config.maxSpawnGap,
-          config.minSpawnGapEnd * 2,
+          config.maxSpawnGap / diff,
+          (config.minSpawnGapEnd * 2) / diff,
           waveProgress,
         );
         currentTime += Math.random() * (maxGap - minGap) + minGap;
       }
 
-      // Add gap between waves
-      currentTime += config.waveGap;
+      // Adjust wave gap based on difficulty (harder = shorter gaps)
+      currentTime += config.waveGap / diff;
     }
 
     levels.push({
@@ -256,40 +260,40 @@ const METEOR_TYPES = [
     id: 0,
     name: "Small",
     color: "#FF9999",
-    health: 40,
+    health: 30,
     speed: 0.05,
     damageRate: 30,
     rotateRate: 0.0005,
     wiggleRate: 0.001,
     wiggleAmount: 7,
     sizeMultiplier: { x: 1.0, y: 1.0 },
-    coinReward: 10, // 1 coin
+    coinReward: 20, // 1 coin
   },
   {
     id: 1,
     name: "Medium",
     color: "#FF4444",
-    health: 60,
+    health: 50,
     speed: 0.035,
     damageRate: 50,
     rotateRate: 0,
     wiggleRate: 0.03,
     wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
-    coinReward: 15, // 2 coins
+    coinReward: 40, // 2 coins
   },
   {
     id: 2,
     name: "Large",
     color: "#FF0000",
-    health: 90,
+    health: 70,
     speed: 0.05,
     damageRate: 50,
     rotateRate: 0,
     wiggleRate: 0.03,
     wiggleAmount: 0.03,
     sizeMultiplier: { x: 1, y: 2 },
-    coinReward: 20, // 3 coins
+    coinReward: 50, // 3 coins
   },
 ];
 
@@ -1093,12 +1097,10 @@ class Game {
         for (let i = this.coins.length - 1; i >= 0; i--) {
           const coin = this.coins[i];
           if (coin.isClicked(x, y)) {
-            // Add coin value to currency
             this.currency += coin.value;
-            // Remove coin
             this.coins.splice(i, 1);
             coinCollected = true;
-            break; // Only collect one coin per click
+            break;
           }
         }
 
@@ -1107,7 +1109,11 @@ class Game {
           // Check if defense option was clicked
           this.defenseOptions.forEach((option) => {
             if (option.isClicked(x, y)) {
-              if (this.currency >= option.type.cost) {
+              if (this.selectedDefense === option.type) {
+                // Deselect if clicking the same defense
+                this.selectedDefense = null;
+                console.log("Defense deselected");
+              } else if (this.currency >= option.type.cost) {
                 this.selectedDefense = option.type;
                 console.log(`Selected ${option.type.name} defense`);
               } else {
