@@ -8,6 +8,7 @@ const PADDING_LEFT = 40;
 const PADDING_RIGHT = 40;
 
 const INITIAL_CURRENCY = 500;
+const INITIAL_LIVES = 3;
 
 // Game area calculations
 const GAME_AREA_WIDTH = GAME_WIDTH - (PADDING_LEFT + PADDING_RIGHT);
@@ -221,6 +222,7 @@ const GAME_STATES = {
   LOADING: "loading",
   MENU: "menu",
   PLAYING: "playing",
+  LIFE_LOST: "lifeLost",
   LEVEL_COMPLETE: "levelComplete",
   GAME_OVER: "gameover",
   GAME_COMPLETE: "gameComplete",
@@ -1041,6 +1043,29 @@ class Game {
       "#4CAF50",
       24,
     );
+
+    // Add new continue button
+    this.continueButton = new Button(
+      GAME_WIDTH / 2 - 60,
+      GAME_HEIGHT / 2 + 50,
+      120,
+      40,
+      "Continue",
+    );
+
+    this.lifeLostText = new Button(
+      GAME_WIDTH / 2 - 100,
+      GAME_HEIGHT / 2 - 50,
+      200,
+      50,
+      "Life Lost!",
+      "transparent",
+      "#FF4444",
+      24,
+    );
+
+    // Add lives property
+    this.lives = INITIAL_LIVES;
   }
 
   initializeCanvas() {
@@ -1134,6 +1159,10 @@ class Game {
             }
           }
         }
+      } else if (this.gameState === GAME_STATES.LIFE_LOST) {
+        if (this.continueButton.isClicked(x, y)) {
+          this.continuePlaying();
+        }
       }
     });
   }
@@ -1144,6 +1173,7 @@ class Game {
     this.coins = [];
     this.currency = INITIAL_CURRENCY;
     this.selectedDefense = null;
+    this.lives = INITIAL_LIVES; // Reset lives when starting new game
     this.levelManager.startLevel(0);
 
     // Reset defense grid
@@ -1255,11 +1285,16 @@ class Game {
       }
     }
 
-    // Update meteors and check for game over
+    // Update meteors and check for lives
     this.meteors = this.meteors.filter((meteor) => {
       meteor.update(deltaTime);
       if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
-        this.gameState = GAME_STATES.GAME_OVER;
+        this.lives--;
+        if (this.lives <= 0) {
+          this.gameState = GAME_STATES.GAME_OVER;
+        } else {
+          this.gameState = GAME_STATES.LIFE_LOST; // Show life lost screen
+        }
         return false;
       }
       return true;
@@ -1300,10 +1335,9 @@ class Game {
     } else if (this.gameState === GAME_STATES.MENU) {
       this.startButton.draw(this.ctx);
     } else if (this.gameState === GAME_STATES.PLAYING) {
-      // Draw currency
+      // Draw currency and lives
       this.drawCurrency();
-
-      // Draw progress bar
+      this.drawLives();
       this.drawProgressBar(this.ctx);
 
       // Draw defense options
@@ -1321,6 +1355,28 @@ class Game {
       // Draw coins
       const currentTime = performance.now();
       this.coins.forEach((coin) => coin.draw(this.ctx, currentTime));
+    } else if (this.gameState === GAME_STATES.LIFE_LOST) {
+      // Draw the life lost screen
+      this.drawCurrency();
+      this.drawLives();
+      this.drawProgressBar(this.ctx);
+
+      // Add semi-transparent overlay
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+      this.lifeLostText.draw(this.ctx);
+      this.continueButton.draw(this.ctx);
+
+      // Show remaining lives text
+      this.ctx.fillStyle = "#FFF";
+      this.ctx.font = FONT.LARGE.full;
+      this.ctx.textAlign = "center";
+      this.ctx.fillText(
+        `${this.lives} ${this.lives === 1 ? "life" : "lives"} remaining`,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+      );
     } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
       this.levelCompleteText.draw(this.ctx);
       this.nextLevelButton.draw(this.ctx);
@@ -1460,6 +1516,71 @@ class Game {
     this.ctx.textAlign = "center";
     this.ctx.fillText("Loading...", GAME_WIDTH / 2, y - 20);
     this.ctx.fillText(`${Math.floor(progress * 100)}%`, GAME_WIDTH / 2, y + 40);
+  }
+
+  drawLives() {
+    const heartSize = 17;
+    const spacing = 5;
+    const startX = GAME_WIDTH - (heartSize + spacing) * INITIAL_LIVES;
+    const y = (PADDING_TOP / 4) * 3;
+
+    this.ctx.fillStyle = COLORS.TEXT;
+    this.ctx.font = FONT.LARGE.full;
+    this.ctx.textAlign = "right";
+    this.ctx.fillText("Lives:", startX - spacing * 2, y);
+
+    // Draw hearts
+    for (let i = 0; i < INITIAL_LIVES; i++) {
+      const x = startX + (heartSize + spacing) * i;
+
+      // Draw empty heart outline
+      this.ctx.strokeStyle = "#FF0000";
+      this.ctx.lineWidth = 2;
+      this.drawHeart(x, y - heartSize / 2, heartSize);
+
+      // Fill heart if life is remaining
+      if (i < this.lives) {
+        this.ctx.fillStyle = "#FF0000";
+        this.drawHeart(x, y - heartSize / 2, heartSize, true);
+      }
+    }
+  }
+
+  // Helper method to draw a heart
+  drawHeart(x, y, size, fill = false) {
+    const path = new Path2D();
+    path.moveTo(x, y + size / 4);
+    path.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + size / 4);
+    path.bezierCurveTo(
+      x - size / 2,
+      y + size / 2,
+      x,
+      y + (size * 3) / 4,
+      x,
+      y + (size * 3) / 4,
+    );
+    path.bezierCurveTo(
+      x,
+      y + (size * 3) / 4,
+      x + size / 2,
+      y + size / 2,
+      x + size / 2,
+      y + size / 4,
+    );
+    path.bezierCurveTo(x + size / 2, y, x, y, x, y + size / 4);
+
+    if (fill) {
+      this.ctx.fill(path);
+    } else {
+      this.ctx.stroke(path);
+    }
+  }
+
+  // Add new method to continue playing
+  continuePlaying() {
+    this.gameState = GAME_STATES.PLAYING;
+    // Clear any remaining meteors to give player a fresh start
+    this.meteors = [];
   }
 }
 
