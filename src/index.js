@@ -37,31 +37,31 @@ const COLORS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.3,
+  levelVersion: 1.4,
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 5000, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
-  difficultyMultiplier: 0.85, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
+  difficultyMultiplier: 0.9, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
     start: { small: 1, medium: 0, large: 0 },
-    end: { small: 0.4, medium: 0.3, large: 0.3 },
+    end: { small: 0.3, medium: 0.3, large: 0.4 },
   },
 
   // Spawn timing
   minSpawnGap: 900, // Minimum ms between meteors at start
-  minSpawnGapEnd: 300, // Minimum gap by end of level
+  minSpawnGapEnd: 200, // Minimum gap by end of level
 
   maxSpawnGap: 1500, // Maximum ms between meteors at start
-  maxSpawnGapEnd: 700, // Maximum gap by end of level (NEW)
+  maxSpawnGapEnd: 400, // Maximum gap by end of level (NEW)
 
   // Difficulty scaling
   difficultyRamp: 1.25, // Multiplier for difficulty between levels
   waveDuration: 6000, // Initial duration of attack waves in ms
   waveDurationEnd: 2000, // End duration of attack waves in ms (NEW)
   waveGap: 3200, // Initial gap between waves in ms
-  waveGapEnd: 1200, // End gap between waves in ms (NEW)
+  waveGapEnd: 900, // End gap between waves in ms (NEW)
 };
 
 function generateLevels(config = LEVEL_GEN_CONFIG) {
