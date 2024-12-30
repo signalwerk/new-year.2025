@@ -40,7 +40,7 @@ const LEVEL_GEN_CONFIG = {
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 5000, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
-  difficultyMultiplier: 0.75, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
+  difficultyMultiplier: 0.85, // NEW: Global difficulty multiplier (1.0 = normal, < 1.0 easier, > 1.0 harder)
 
   // Meteor type weights (chance of spawning) at start and end of level
   meteorWeights: {
@@ -49,12 +49,12 @@ const LEVEL_GEN_CONFIG = {
   },
 
   // Spawn timing
-  minSpawnGap: 1000, // Minimum ms between meteors
+  minSpawnGap: 900, // Minimum ms between meteors
   maxSpawnGap: 1500, // Maximum ms between meteors at start
-  minSpawnGapEnd: 500, // Minimum gap by end of level
+  minSpawnGapEnd: 300, // Minimum gap by end of level
 
   // Difficulty scaling
-  difficultyRamp: 1.15, // Multiplier for difficulty between levels
+  difficultyRamp: 1.25, // Multiplier for difficulty between levels
   waveDuration: 6000, // Duration of attack waves in ms
   waveGap: 3200, // Gap between waves in ms
 };
