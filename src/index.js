@@ -53,7 +53,7 @@ const COLORS = {
 const TEXTS = {
   LIVES: "Leben:",
   LEVEL: "Level",
-  SCORE: "Punkte:",
+  SCORE: "Punkte",
   COINS: "Coins:",
   CURRENCY: "Geld:",
 };
@@ -1432,7 +1432,7 @@ class Game {
     // Draw scores in top left corner
     this.ctx.textAlign = "left";
     this.ctx.fillText(
-      `${TEXTS.SCORE} ${this.currentScore}`,
+      `${this.currentScore} ${TEXTS.SCORE}`,
       PADDING_LEFT,
       TEXT_TOP,
     );
