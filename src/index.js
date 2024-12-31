@@ -28,11 +28,16 @@ const COLORS = {
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
   BUTTON: "#444",
   BUTTON_TEXT: "#fff",
-  PROGRESS_BAR: "#4CAF50",
+  PROGRESS_BAR: "#3e737a",
+  PROGRESS_BORDER: "#6e708d",
+  DEFENSE_BACKGROUND: "rgba(255,255,255,0.2)",
   BORDER: "#333",
   DEBUG_LINE: "rgba(0,0,0,0.1)",
+  GRID_LINE: "rgba(0,0,0,0.25)",
   DEBUG_TEXT: "#666",
   SELECTION: "rgba(255,80,80,0.7)",
+  HEART_FILL: "#d05377",
+  HEART_STROKE: "#c14e6f",
 };
 
 // Level generation configuration options
@@ -283,7 +288,12 @@ const ASSETS = {
     "/assets/img/meteor-2.png",
     "/assets/img/meteor-3.png",
   ],
-  BACKGROUND: "/assets/img/bg.png", // Add background image
+  DEFENSES: [
+    "/assets/img/defense-1.png",
+    "/assets/img/defense-2.png",
+    "/assets/img/defense-3.png",
+  ],
+  BACKGROUND: "/assets/img/bg.png",
 };
 
 // Add new AssetLoader class
@@ -299,11 +309,18 @@ class AssetLoader {
       this.loadImage(`meteor-${index}`, path),
     );
 
-    // Add background loading
+    const defensePromises = ASSETS.DEFENSES.map((path, index) =>
+      this.loadImage(`defense-${index}`, path),
+    );
+
     const backgroundPromise = this.loadImage("background", ASSETS.BACKGROUND);
 
     try {
-      await Promise.all([...meteorPromises, backgroundPromise]);
+      await Promise.all([
+        ...meteorPromises,
+        ...defensePromises,
+        backgroundPromise,
+      ]);
       return true;
     } catch (error) {
       console.error("Error loading assets:", error);
@@ -610,20 +627,31 @@ class Defense {
 
   draw(ctx, x, y, size, isSelected = false, isInactive = false) {
     // Draw spot outline
-    ctx.strokeStyle = this.isEmpty() ? COLORS.DEBUG_LINE : "#888";
+    ctx.strokeStyle = this.isEmpty() ? COLORS.GRID_LINE : "#888";
     ctx.lineWidth = 1;
     ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+    // ctx.fillStyle = COLORS.PROGRESS_BORDER;
+    ctx.fillStyle = COLORS.DEFENSE_BACKGROUND; // Add black background to prevent any transparency
+    ctx.fillRect(x - size / 2, y - size / 2, size, size);
 
     if (!this.isEmpty()) {
-      // Draw defense with health-based opacity
-      ctx.fillStyle = this.type.color;
-      if (isInactive) {
-        ctx.globalAlpha = 0.5;
-      } else {
-        ctx.globalAlpha = Math.max(0.3, this.health / this.maxHealth);
+      if (game?.assetLoader) {
+        // Draw defense image
+        const defenseImage = game.assetLoader.getImage(
+          `defense-${this.type.id}`,
+        );
+        if (defenseImage) {
+          if (isInactive) {
+            ctx.globalAlpha = 0.5;
+          } else {
+            ctx.globalAlpha = Math.max(0.3, this.health / this.maxHealth);
+          }
+
+          ctx.drawImage(defenseImage, x - size / 2, y - size / 2, size, size);
+
+          ctx.globalAlpha = 1.0;
+        }
       }
-      ctx.fillRect(x - size / 2, y - size / 2, size, size);
-      ctx.globalAlpha = 1.0;
 
       // Draw projectiles
       this.projectiles.forEach((projectile) => projectile.draw(ctx));
@@ -1192,6 +1220,12 @@ class Game {
   }
 
   drawBackground() {
+    if (DEBUG) {
+      this.ctx.fillStyle = "#666";
+      this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      return;
+    }
+
     // Draw background image
     const bgImage = this.assetLoader.getImage("background");
     if (bgImage) {
@@ -1204,46 +1238,9 @@ class Game {
       this.ctx.fillStyle = COLORS.BACKGROUND;
       this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     }
+  }
 
-    // Draw game area border
-    this.ctx.strokeStyle = COLORS.BORDER;
-    this.ctx.strokeRect(
-      PADDING_LEFT,
-      PADDING_TOP,
-      this.gameAreaWidth,
-      this.gameAreaHeight,
-    );
-
-    // Draw lanes
-    for (let i = 0; i <= LANES; i++) {
-      const x = PADDING_LEFT + i * this.laneWidth;
-      this.ctx.beginPath();
-      this.ctx.moveTo(x, PADDING_TOP);
-      this.ctx.lineTo(x, GAME_HEIGHT - PADDING_BOTTOM);
-      this.ctx.stroke();
-    }
-
-    // Draw padding areas (slightly darker shade for visual separation)
-    this.ctx.fillStyle = COLORS.BACKGROUND;
-    // Top padding
-    // this.ctx.fillRect(0, 0, GAME_WIDTH, PADDING_TOP);
-    // Bottom padding
-    // this.ctx.fillRect(
-    //   0,
-    //   GAME_HEIGHT - PADDING_BOTTOM,
-    //   GAME_WIDTH,
-    //   PADDING_BOTTOM,
-    // );
-    // Left padding
-    this.ctx.fillRect(0, PADDING_TOP, PADDING_LEFT, this.gameAreaHeight);
-    // Right padding
-    this.ctx.fillRect(
-      GAME_WIDTH - PADDING_RIGHT,
-      PADDING_TOP,
-      PADDING_RIGHT,
-      this.gameAreaHeight,
-    );
-
+  drawDefenseGrid() {
     // Draw defense grid
     for (let row = 0; row < this.defenseGrid.length; row++) {
       for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
@@ -1345,6 +1342,8 @@ class Game {
       this.startButton.draw(this.ctx);
       this.drawVersion();
     } else if (this.gameState === GAME_STATES.PLAYING) {
+      this.drawDefenseGrid();
+
       // Draw currency and lives
       this.drawCurrency();
       this.drawLives();
@@ -1489,7 +1488,7 @@ class Game {
     ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     // Border
-    ctx.strokeStyle = COLORS.BORDER;
+    ctx.strokeStyle = COLORS.PROGRESS_BORDER;
     ctx.strokeRect(x, y, barWidth, barHeight);
 
     // Level text
@@ -1569,13 +1568,13 @@ class Game {
       const x = startX + (heartSize + spacing) * i;
 
       // Draw empty heart outline
-      this.ctx.strokeStyle = "#FF0000";
+      this.ctx.strokeStyle = COLORS.HEART_STROKE;
       this.ctx.lineWidth = 2;
       this.drawHeart(x, y - heartSize / 2, heartSize);
 
       // Fill heart if life is remaining
       if (i < this.lives) {
-        this.ctx.fillStyle = "#FF0000";
+        this.ctx.fillStyle = COLORS.HEART_FILL;
         this.drawHeart(x, y - heartSize / 2, heartSize, true);
       }
     }
