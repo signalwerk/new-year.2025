@@ -1672,7 +1672,7 @@ class Game {
   // Add new method to draw version
   drawVersion() {
     this.ctx.fillStyle = COLORS.TEXT;
-    this.ctx.font = "10px Arial"; // Smaller font size
+    this.ctx.font = `${UNIT * 7}px Arial`; // Smaller font size
     this.ctx.textAlign = "right";
     this.ctx.fillText(
       `v${LEVEL_GEN_CONFIG.levelVersion}`,
