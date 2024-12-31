@@ -60,7 +60,7 @@ const TEXTS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: "1.8.2",
+  levelVersion: "1.8.3",
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 0, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
@@ -514,19 +514,15 @@ class Meteor {
 // Add to existing constants
 class Button {
   constructor(
-    x,
-    y,
-    width,
-    height,
     text,
     backgroundColor = COLORS.BUTTON,
     textColor = COLORS.BUTTON_TEXT,
     fontSize = 16,
   ) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
+    this.x = BUTTON_X;
+    this.y = BUTTON_Y;
+    this.width = BUTTON_WIDTH;
+    this.height = BUTTON_HEIGHT;
     this.text = text;
     this.backgroundColor = backgroundColor;
     this.textColor = textColor;
@@ -1070,30 +1066,8 @@ class Game {
     this.setupEventListeners();
 
     // Create buttons
-    this.startButton = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Start Game",
-    );
-    this.retryButton = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Try Again",
-    );
-    this.gameOverText = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Game Over!",
-      "transparent",
-      "red",
-      24,
-    );
+    this.startButton = new Button("Start Game");
+    this.retryButton = new Button("Try Again");
 
     // Initialize currency and defense options
     this.currency = INITIAL_CURRENCY;
@@ -1106,55 +1080,12 @@ class Game {
     this.levelManager = new LevelManager();
 
     // Add new buttons
-    this.nextLevelButton = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Next Level",
-    );
-
-    this.levelCompleteText = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Level Complete!",
-      "transparent",
-      "#4CAF50",
-      24,
-    );
-
-    this.gameCompleteText = new Button(
-      BUTTON_X,
-      GAME_HEIGHT / 2 - 50,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Game Complete!",
-      "transparent",
-      "#4CAF50",
-      24,
-    );
+    this.nextLevelButton = new Button("Next Level");
 
     // Add new continue button
-    this.continueButton = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Continue",
-    );
+    this.continueButton = new Button("Continue");
 
-    this.lifeLostText = new Button(
-      BUTTON_X,
-      BUTTON_Y,
-      BUTTON_WIDTH,
-      BUTTON_HEIGHT,
-      "Life Lost!",
-      "transparent",
-      "#FF4444",
-      24,
-    );
+    this.lifeLostText = new Button("Life Lost!");
 
     // Add lives property
     this.lives = INITIAL_LIVES;
