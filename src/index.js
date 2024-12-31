@@ -1,18 +1,21 @@
 // Game constants
-const GAME_WIDTH = 360; // Base width, will be scaled
-const GAME_HEIGHT = 640; // 16:9 ratio
+const UNIT = 4;
+
+const GAME_WIDTH = UNIT * 360; // Base width, will be scaled
+const GAME_HEIGHT = UNIT * 640; // 16:9 ratio
+
 const LANES = 6;
-const PADDING_TOP = 40; // More space for score/level
-const PADDING_BOTTOM = 100; // More space for controls/UI
-const PADDING_LEFT = 40;
-const PADDING_RIGHT = 40;
-const TEXT_TOP = PADDING_TOP + 20;
+const PADDING_TOP = UNIT * 40; // More space for score/level
+const PADDING_BOTTOM = UNIT * 100; // More space for controls/UI
+const PADDING_LEFT = UNIT * 40;
+const PADDING_RIGHT = UNIT * 40;
+const TEXT_TOP = PADDING_TOP + UNIT * 20;
 
 const INITIAL_CURRENCY = 500;
 const INITIAL_LIVES = 3;
 
-const BUTTON_WIDTH = 200;
-const BUTTON_HEIGHT = 50;
+const BUTTON_WIDTH = GAME_WIDTH / 2;
+const BUTTON_HEIGHT = BUTTON_WIDTH / 4;
 
 const BUTTON_X = GAME_WIDTH / 2 - BUTTON_WIDTH / 2;
 const BUTTON_Y = GAME_HEIGHT / 2 - BUTTON_HEIGHT / 2;
@@ -242,7 +245,7 @@ const METEOR_TYPES = [
     name: "Small",
     color: "#FF9999",
     health: 30,
-    speed: 0.05,
+    speed: UNIT * 0.05,
     damageRate: 30,
     rotateRate: 0.0005,
     wiggleRate: 0.001,
@@ -255,7 +258,7 @@ const METEOR_TYPES = [
     name: "Medium",
     color: "#FF4444",
     health: 60,
-    speed: 0.035,
+    speed: UNIT * 0.035,
     damageRate: 50,
     rotateRate: 0,
     wiggleRate: 0.03,
@@ -268,7 +271,7 @@ const METEOR_TYPES = [
     name: "Large",
     color: "#FF0000",
     health: 90,
-    speed: 0.05,
+    speed: UNIT * 0.05,
     damageRate: 50,
     rotateRate: 0,
     wiggleRate: 0.03,
@@ -281,21 +284,21 @@ const METEOR_TYPES = [
 // Font definitions
 const FONT = {
   SMALL: {
-    size: 13,
+    size: UNIT * 13,
     family: "GameText",
     get full() {
       return `${this.size}px ${this.family}`;
     },
   },
   LARGE: {
-    size: 18,
+    size: UNIT * 18,
     family: "GameText",
     get full() {
       return `${this.size}px ${this.family}`;
     },
   },
   TITLE: {
-    size: 36,
+    size: UNIT * 36,
     family: "GameTitle",
     get full() {
       return `${this.size}px ${this.family}`;
@@ -557,9 +560,9 @@ class Projectile {
   constructor(x, y, damage) {
     this.x = x;
     this.y = y;
-    this.speed = 0.3;
+    this.speed = UNIT * 0.3;
     this.damage = damage;
-    this.size = 4;
+    this.size = UNIT * 4;
   }
 
   update(deltaTime) {
@@ -680,7 +683,7 @@ class Defense {
   draw(ctx, x, y, size, isSelected = false, isInactive = false) {
     // Draw spot outline
     ctx.strokeStyle = this.isEmpty() ? COLORS.GRID_LINE : "#888";
-    ctx.lineWidth = 1;
+    ctx.lineWidth = UNIT * 1;
     ctx.strokeRect(x - size / 2, y - size / 2, size, size);
     ctx.fillStyle = COLORS.DEFENSE_BACKGROUND; // Add black background to prevent any transparency
     ctx.fillRect(x - size / 2, y - size / 2, size, size);
@@ -722,7 +725,7 @@ class Defense {
       // Draw selection highlight
       if (isSelected) {
         ctx.strokeStyle = COLORS.SELECTION;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = UNIT * 4;
         ctx.strokeRect(x - size / 2, y - size / 2, size, size);
       }
     }
@@ -759,7 +762,7 @@ class DefenseOption {
     ctx.fillText(
       `$${this.type.cost}`,
       this.x + SPOT_SIZE / 2,
-      this.y + SPOT_SIZE + 15,
+      this.y + SPOT_SIZE + UNIT * 15,
     );
   }
 
@@ -823,19 +826,19 @@ class Coin {
     this.value = value;
     this.lifetime = 5000; // 5 seconds lifetime
     this.createTime = performance.now();
-    this.hitRadius = 30; // Bigger radius for hit detection
+    this.hitRadius = UNIT * 30; // Bigger radius for hit detection
 
     // Size based on value
-    this.size = 8 + ((value - 10) / 10) * 2; // Increases by 2 pixels for each 10 value
+    this.size = UNIT * (8 + ((value - 10) / 10) * 2); // Increases by 2 pixels for each 10 value
 
     // Base movement
     const angle = Math.random() * Math.PI * 2;
-    const speed = 0.3 + Math.random() * 0.1;
+    const speed = UNIT * (0.3 + Math.random() * 0.1);
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
 
     // Wave motion parameters
-    this.waveAmplitude = 2.2 + Math.random() * 0.2;
+    this.waveAmplitude = UNIT * (2.2 + Math.random() * 0.2);
     this.waveFrequency = 0.005 + Math.random() * 0.001;
     this.waveOffset = Math.random() * Math.PI * 2;
     this.baseX = x;
@@ -891,7 +894,7 @@ class Coin {
 
     // Add coin border
     ctx.strokeStyle = "#B8860B"; // Dark gold
-    ctx.lineWidth = 1;
+    ctx.lineWidth = UNIT * 1;
     ctx.stroke();
 
     // Draw value
@@ -1413,7 +1416,7 @@ class Game {
   }
 
   drawCurrency() {
-    const currencyY = GAME_HEIGHT - PADDING_BOTTOM + 15; // Position below game grid
+    const currencyY = GAME_HEIGHT - PADDING_BOTTOM + UNIT * 15; // Position below game grid
 
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.SMALL.full;
@@ -1523,8 +1526,8 @@ class Game {
   }
 
   createDefenseOptions() {
-    const optionsAreaY = GAME_HEIGHT - PADDING_BOTTOM + 30; // Move down to make room for currency
-    const spacing = 20;
+    const optionsAreaY = GAME_HEIGHT - PADDING_BOTTOM + UNIT * 30; // Move down to make room for currency
+    const spacing = UNIT * 20;
     const totalWidth = (SPOT_SIZE + spacing) * DEFENSE_TYPES.length - spacing;
     const startX = (GAME_WIDTH - totalWidth) / 2;
 
@@ -1574,9 +1577,9 @@ class Game {
   drawProgressBar(ctx) {
     // Draw progress bar background
     const barWidth = GAME_WIDTH - PADDING_LEFT - PADDING_RIGHT; // Leave some padding
-    const barHeight = 20;
+    const barHeight = UNIT * 20;
     const x = PADDING_LEFT;
-    const y = 20; // Padding from top
+    const y = UNIT * 20; // Padding from top
 
     // Background
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -1589,6 +1592,7 @@ class Game {
 
     // Border
     ctx.strokeStyle = COLORS.PROGRESS_BORDER;
+    ctx.lineWidth = UNIT * 2;
     ctx.strokeRect(x, y, barWidth, barHeight);
 
     // Level text
@@ -1650,24 +1654,23 @@ class Game {
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.LARGE.full;
     this.ctx.textAlign = "center";
-    this.ctx.fillText("Loading...", GAME_WIDTH / 2, y - 20);
-    this.ctx.fillText(`${Math.floor(progress * 100)}%`, GAME_WIDTH / 2, y + 40);
+    this.ctx.fillText("Loading...", GAME_WIDTH / 2, y - UNIT * 20);
+    this.ctx.fillText(
+      `${Math.floor(progress * 100)}%`,
+      GAME_WIDTH / 2,
+      y + UNIT * 40,
+    );
   }
 
   drawLives() {
-    const heartSize = 17;
-    const spacing = 5;
+    const heartSize = UNIT * 17;
+    const spacing = UNIT * 5;
     const startX =
       GAME_WIDTH -
       PADDING_LEFT -
       heartSize / 2 -
       (heartSize + spacing) * (INITIAL_LIVES - 1);
-    const y = PADDING_TOP + 20;
-
-    // this.ctx.fillStyle = COLORS.TEXT;
-    // this.ctx.font = FONT.LARGE.full;
-    // this.ctx.textAlign = "right";
-    // this.ctx.fillText(TEXTS.LIVES, startX - heartSize / 2 - spacing, y);
+    const y = PADDING_TOP + UNIT * 20;
 
     // Draw hearts
     for (let i = 0; i < INITIAL_LIVES; i++) {
@@ -1675,7 +1678,7 @@ class Game {
 
       // Draw empty heart outline
       this.ctx.strokeStyle = COLORS.HEART_STROKE;
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = UNIT * 2;
       this.drawHeart(x, y - heartSize / 2, heartSize);
 
       // Fill heart if life is remaining
@@ -1712,6 +1715,7 @@ class Game {
     if (fill) {
       this.ctx.fill(path);
     } else {
+      this.ctx.lineCap = "round";
       this.ctx.stroke(path);
     }
   }
@@ -1741,8 +1745,8 @@ class Game {
     this.ctx.textAlign = "right";
     this.ctx.fillText(
       `v${LEVEL_GEN_CONFIG.levelVersion}`,
-      GAME_WIDTH - 5,
-      GAME_HEIGHT - 5,
+      GAME_WIDTH - UNIT * 5,
+      GAME_HEIGHT - UNIT * 5,
     ); // Position in bottom left corner
   }
 
