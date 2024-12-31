@@ -6,6 +6,7 @@ const PADDING_TOP = 40; // More space for score/level
 const PADDING_BOTTOM = 100; // More space for controls/UI
 const PADDING_LEFT = 40;
 const PADDING_RIGHT = 40;
+const TEXT_TOP = PADDING_TOP + 20;
 
 const INITIAL_CURRENCY = 500;
 const INITIAL_LIVES = 3;
@@ -19,7 +20,7 @@ const METEOR_SIZE = LANE_WIDTH * 0.8; // Base size for meteors
 const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 
 // Add to game constants
-const DEBUG = false; // Toggle for development visualization
+const DEBUG = true; // Toggle for development visualization
 
 const COLORS = {
   BACKGROUND: "#edf1e7",
@@ -38,6 +39,14 @@ const COLORS = {
   SELECTION: "rgba(255,80,80,0.7)",
   HEART_FILL: "#d05377",
   HEART_STROKE: "#c14e6f",
+};
+
+const TEXTS = {
+  LIVES: "Leben:",
+  LEVEL: "Level",
+  SCORE: "Punkte:",
+  COINS: "Coins:",
+  CURRENCY: "Geld:",
 };
 
 // Level generation configuration options
@@ -151,7 +160,7 @@ function generateLevels(config = LEVEL_GEN_CONFIG) {
     }
 
     levels.push({
-      name: `Level ${levelNum + 1}`,
+      name: `${TEXTS.LEVEL} ${levelNum + 1}`,
       duration: duration,
       meteors: meteors.sort((a, b) => a.startTime - b.startTime),
     });
@@ -630,7 +639,6 @@ class Defense {
     ctx.strokeStyle = this.isEmpty() ? COLORS.GRID_LINE : "#888";
     ctx.lineWidth = 1;
     ctx.strokeRect(x - size / 2, y - size / 2, size, size);
-    // ctx.fillStyle = COLORS.PROGRESS_BORDER;
     ctx.fillStyle = COLORS.DEFENSE_BACKGROUND; // Add black background to prevent any transparency
     ctx.fillRect(x - size / 2, y - size / 2, size, size);
 
@@ -1316,14 +1324,18 @@ class Game {
     this.ctx.textAlign = "center";
 
     // Draw currency centered below grid
-    this.ctx.fillText(`Currency: $${this.currency}`, GAME_WIDTH / 2, currencyY);
+    this.ctx.fillText(
+      `${TEXTS.CURRENCY} $${this.currency}`,
+      GAME_WIDTH / 2,
+      currencyY,
+    );
 
     // Draw scores in top left corner
     this.ctx.textAlign = "left";
     this.ctx.fillText(
-      `Score: ${this.currentScore}`,
-      PADDING_LEFT / 3,
-      PADDING_TOP + 20,
+      `${TEXTS.SCORE} ${this.currentScore}`,
+      PADDING_LEFT,
+      TEXT_TOP,
     );
 
     // this.ctx.fillText(
@@ -1473,9 +1485,9 @@ class Game {
 
   drawProgressBar(ctx) {
     // Draw progress bar background
-    const barWidth = GAME_WIDTH - 100; // Leave some padding
+    const barWidth = GAME_WIDTH - PADDING_LEFT - PADDING_RIGHT; // Leave some padding
     const barHeight = 20;
-    const x = 50; // Padding from left
+    const x = PADDING_LEFT;
     const y = 20; // Padding from top
 
     // Background
@@ -1498,18 +1510,20 @@ class Game {
     ctx.fillText(
       `${LEVELS[this.levelManager.currentLevel].name}`,
       GAME_WIDTH / 2,
-      y + barHeight + 16,
+      TEXT_TOP,
     );
 
     // Time remaining
-    const timeLeft = Math.ceil(
-      (LEVELS[this.levelManager.currentLevel].duration -
-        (performance.now() - this.levelManager.levelStartTime)) /
-        1000,
-    );
-    if (timeLeft > 0) {
-      ctx.font = FONT.SMALL.full;
-      ctx.fillText(`${timeLeft}s`, GAME_WIDTH - 30, y + barHeight / 2 + 5);
+    if (DEBUG) {
+      const timeLeft = Math.ceil(
+        (LEVELS[this.levelManager.currentLevel].duration -
+          (performance.now() - this.levelManager.levelStartTime)) /
+          1000,
+      );
+      if (timeLeft > 0) {
+        ctx.font = FONT.SMALL.full;
+        ctx.fillText(`${timeLeft}s`, GAME_WIDTH - 30, y + barHeight / 2 + 5);
+      }
     }
   }
 
@@ -1555,13 +1569,17 @@ class Game {
   drawLives() {
     const heartSize = 17;
     const spacing = 5;
-    const startX = GAME_WIDTH - (heartSize + spacing) * INITIAL_LIVES;
+    const startX =
+      GAME_WIDTH -
+      PADDING_LEFT -
+      heartSize / 2 -
+      (heartSize + spacing) * (INITIAL_LIVES - 1);
     const y = PADDING_TOP + 20;
 
-    this.ctx.fillStyle = COLORS.TEXT;
-    this.ctx.font = FONT.LARGE.full;
-    this.ctx.textAlign = "right";
-    this.ctx.fillText("Lives:", startX - spacing * 2, y);
+    // this.ctx.fillStyle = COLORS.TEXT;
+    // this.ctx.font = FONT.LARGE.full;
+    // this.ctx.textAlign = "right";
+    // this.ctx.fillText(TEXTS.LIVES, startX - heartSize / 2 - spacing, y);
 
     // Draw hearts
     for (let i = 0; i < INITIAL_LIVES; i++) {
