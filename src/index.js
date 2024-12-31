@@ -283,6 +283,13 @@ const METEOR_TYPES = [
 
 // Font definitions
 const FONT = {
+  TINY: {
+    size: UNIT * 7,
+    family: "GameText",
+    get full() {
+      return `${this.size}px ${this.family}`;
+    },
+  },
   SMALL: {
     size: UNIT * 13,
     family: "GameText",
@@ -895,10 +902,12 @@ class Coin {
 
     // Draw value
     ctx.fillStyle = "black";
-    ctx.font = `bold ${Math.max(10, this.size)}px ${FONT.SMALL.family}`;
+    ctx.globalAlpha = 0.7;
+    ctx.font = `${Math.max(10, this.size)}px ${FONT.SMALL.family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(`${this.value}`, coinX, coinY);
+    ctx.fillText(`${this.value}`, coinX, coinY + this.size / 8);
+    ctx.globalAlpha = 1;
   }
 
   update(currentTime) {
@@ -1671,14 +1680,16 @@ class Game {
 
   // Add new method to draw version
   drawVersion() {
+    this.ctx.globalAlpha = 0.5;
     this.ctx.fillStyle = COLORS.TEXT;
-    this.ctx.font = `${UNIT * 7}px Arial`; // Smaller font size
+    this.ctx.font = FONT.TINY.full; // Smaller font size
     this.ctx.textAlign = "right";
     this.ctx.fillText(
       `v${LEVEL_GEN_CONFIG.levelVersion}`,
       GAME_WIDTH - UNIT * 5,
       GAME_HEIGHT - UNIT * 5,
     ); // Position in bottom left corner
+    this.ctx.globalAlpha = 1;
   }
 
   // Add new method to load level high score
