@@ -11,6 +11,12 @@ const TEXT_TOP = PADDING_TOP + 20;
 const INITIAL_CURRENCY = 500;
 const INITIAL_LIVES = 3;
 
+const BUTTON_WIDTH = 200;
+const BUTTON_HEIGHT = 50;
+
+const BUTTON_X = GAME_WIDTH / 2 - BUTTON_WIDTH / 2;
+const BUTTON_Y = GAME_HEIGHT / 2 - BUTTON_HEIGHT / 2;
+
 // Game area calculations
 const GAME_AREA_WIDTH = GAME_WIDTH - (PADDING_LEFT + PADDING_RIGHT);
 const GAME_AREA_HEIGHT = GAME_HEIGHT - (PADDING_TOP + PADDING_BOTTOM);
@@ -275,26 +281,26 @@ const METEOR_TYPES = [
 // Font definitions
 const FONT = {
   SMALL: {
-    size: "12px",
+    size: 13,
     family: "GameText",
     get full() {
-      return `${this.size} ${this.family}`;
+      return `${this.size}px ${this.family}`;
     },
   },
   LARGE: {
-    size: "14px",
+    size: 18,
     family: "GameText",
     get full() {
-      return `${this.size} ${this.family}`;
+      return `${this.size}px ${this.family}`;
     },
   },
   TITLE: {
-    size: "24px",
+    size: 36,
     family: "GameTitle",
     get full() {
-      return `${this.size} ${this.family}`;
+      return `${this.size}px ${this.family}`;
     },
-  }
+  },
 };
 
 // Add at the top of the file, after other constants
@@ -312,8 +318,8 @@ const ASSETS = {
   BACKGROUND: "/assets/img/bg.png",
   FONTS: {
     TITLE: "/assets/fonts/pilowlava/Fonts/webfonts/Pilowlava-Regular.woff2",
-    TEXT: "/assets/fonts/space-mono/SpaceMono-Regular.ttf"
-  }
+    TEXT: "/assets/fonts/space-mono/SpaceMono-Regular.ttf",
+  },
 };
 
 // Add new AssetLoader class
@@ -339,7 +345,7 @@ class AssetLoader {
     // Add font loading
     const fontPromises = [
       this.loadFont("GameTitle", ASSETS.FONTS.TITLE),
-      this.loadFont("GameText", ASSETS.FONTS.TEXT)
+      this.loadFont("GameText", ASSETS.FONTS.TEXT),
     ];
 
     try {
@@ -386,9 +392,9 @@ class AssetLoader {
   // Add new loadFont method
   async loadFont(fontFamily, url) {
     this.totalAssets++;
-    
+
     const fontFace = new FontFace(fontFamily, `url(${url})`);
-    
+
     try {
       const loadedFont = await fontFace.load();
       document.fonts.add(loadedFont);
@@ -748,7 +754,7 @@ class DefenseOption {
     ctx.fillStyle = isInactive
       ? COLORS.DEFENSE_OPTION_TEXT_INACTIVE
       : COLORS.DEFENSE_OPTION_TEXT;
-    ctx.font = FONT.LARGE.full;
+    ctx.font = FONT.SMALL.full;
     ctx.textAlign = "center";
     ctx.fillText(
       `$${this.type.cost}`,
@@ -1006,6 +1012,33 @@ class LevelManager {
 
 const STORAGE_KEY = "meteorDefenseHighScore";
 
+// Add after other classes, before Game class
+class TextRenderer {
+  static drawTitle(ctx, text, color = COLORS.TEXT, subtitle = null) {
+    const x = GAME_WIDTH / 2;
+    const y = GAME_HEIGHT / 4;
+    const lineHeight = FONT.TITLE.size * 1.5;
+    const subtitleLineHeight = FONT.LARGE.size * 1.3;
+
+    // Draw main title
+    ctx.fillStyle = color;
+    ctx.font = FONT.TITLE.full;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+
+    // Draw subtitle if provided
+    if (subtitle) {
+      ctx.font = FONT.LARGE.full;
+      // Split subtitle into lines and render each one
+      const subtitleLines = subtitle.split("\n");
+      subtitleLines.forEach((line, index) => {
+        ctx.fillText(line, x, y + lineHeight + index * subtitleLineHeight);
+      });
+    }
+  }
+}
+
 class Game {
   constructor() {
     this.canvas = document.getElementById("canvas");
@@ -1034,30 +1067,25 @@ class Game {
     this.setupEventListeners();
 
     // Create buttons
-    const buttonWidth = 100;
-    const buttonHeight = 50;
-    const buttonX = GAME_WIDTH / 2 - buttonWidth / 2;
-    const buttonY = GAME_HEIGHT / 2 - buttonHeight / 2;
-
     this.startButton = new Button(
-      buttonX,
-      buttonY,
-      buttonWidth,
-      buttonHeight,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Start Game",
     );
     this.retryButton = new Button(
-      buttonX,
-      buttonY,
-      buttonWidth,
-      buttonHeight,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Try Again",
     );
     this.gameOverText = new Button(
-      GAME_WIDTH / 2 - 100,
-      GAME_HEIGHT / 2 - 100,
-      200,
-      50,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Game Over!",
       "transparent",
       "red",
@@ -1076,18 +1104,18 @@ class Game {
 
     // Add new buttons
     this.nextLevelButton = new Button(
-      GAME_WIDTH / 2 - 60,
-      GAME_HEIGHT / 2 + 50,
-      120,
-      40,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Next Level",
     );
 
     this.levelCompleteText = new Button(
-      GAME_WIDTH / 2 - 100,
-      GAME_HEIGHT / 2 - 50,
-      200,
-      50,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Level Complete!",
       "transparent",
       "#4CAF50",
@@ -1095,10 +1123,10 @@ class Game {
     );
 
     this.gameCompleteText = new Button(
-      GAME_WIDTH / 2 - 100,
+      BUTTON_X,
       GAME_HEIGHT / 2 - 50,
-      200,
-      50,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Game Complete!",
       "transparent",
       "#4CAF50",
@@ -1107,18 +1135,18 @@ class Game {
 
     // Add new continue button
     this.continueButton = new Button(
-      GAME_WIDTH / 2 - 60,
-      GAME_HEIGHT / 2 + 50,
-      120,
-      40,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Continue",
     );
 
     this.lifeLostText = new Button(
-      GAME_WIDTH / 2 - 100,
-      GAME_HEIGHT / 2 - 50,
-      200,
-      50,
+      BUTTON_X,
+      BUTTON_Y,
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
       "Life Lost!",
       "transparent",
       "#FF4444",
@@ -1134,6 +1162,10 @@ class Game {
 
     // Add level high score property
     this.levelHighScore = this.loadLevelHighScore();
+
+    // Remove the button-based text definitions and just store the colors
+    this.gameOverColor = "#FF4444";
+    this.successColor = "#4CAF50";
   }
 
   initializeCanvas() {
@@ -1384,7 +1416,7 @@ class Game {
     const currencyY = GAME_HEIGHT - PADDING_BOTTOM + 15; // Position below game grid
 
     this.ctx.fillStyle = COLORS.TEXT;
-    this.ctx.font = FONT.LARGE.full;
+    this.ctx.font = FONT.SMALL.full;
     this.ctx.textAlign = "center";
 
     // Draw currency centered below grid
@@ -1415,6 +1447,13 @@ class Game {
     if (this.gameState === GAME_STATES.LOADING) {
       this.drawLoadingScreen();
     } else if (this.gameState === GAME_STATES.MENU) {
+      TextRenderer.drawTitle(
+        this.ctx,
+        "HELLO!",
+        COLORS.TEXT,
+        "Welcome to the game!\nTwo words about the game.",
+      );
+
       this.startButton.draw(this.ctx);
       this.drawVersion();
     } else if (this.gameState === GAME_STATES.PLAYING) {
@@ -1452,49 +1491,34 @@ class Game {
       this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
       this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-      this.lifeLostText.draw(this.ctx);
-      this.continueButton.draw(this.ctx);
-
-      // Show remaining lives text
-      this.ctx.fillStyle = "#FFF";
-      this.ctx.font = FONT.LARGE.full;
-      this.ctx.textAlign = "center";
-      this.ctx.fillText(
+      TextRenderer.drawTitle(
+        this.ctx,
+        "Life Lost!",
+        this.gameOverColor,
         `${this.lives} ${this.lives === 1 ? "life" : "lives"} remaining`,
-        GAME_WIDTH / 2,
-        GAME_HEIGHT / 2,
       );
 
-      this.drawVersion();
+      this.continueButton.draw(this.ctx);
     } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
-      this.levelCompleteText.draw(this.ctx);
+      TextRenderer.drawTitle(this.ctx, "Level Complete!", this.successColor);
       this.nextLevelButton.draw(this.ctx);
-      this.drawVersion();
     } else if (this.gameState === GAME_STATES.GAME_COMPLETE) {
-      this.gameCompleteText.draw(this.ctx);
-      this.drawVersion();
+      TextRenderer.drawTitle(
+        this.ctx,
+        "Game Complete!",
+        this.successColor,
+        `Final Score: ${this.currentScore}`,
+      );
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
-      this.gameOverText.draw(this.ctx);
-      this.retryButton.draw(this.ctx);
-
-      // Draw scores with level information
-      this.ctx.fillStyle = COLORS.TEXT;
-      this.ctx.font = FONT.LARGE.full;
-      this.ctx.textAlign = "center";
-      this.ctx.fillText(
+      TextRenderer.drawTitle(
+        this.ctx,
+        "Game Over!",
+        this.gameOverColor,
         `Final Score: ${this.currentScore} (Level ${
           this.levelManager.currentLevel + 1
         })`,
-        GAME_WIDTH / 2,
-        GAME_HEIGHT / 2 + 50,
       );
-      this.ctx.fillText(
-        `High Score: ${this.highScore} (Level ${this.levelHighScore + 1})`,
-        GAME_WIDTH / 2,
-        GAME_HEIGHT / 2 + 80,
-      );
-
-      this.drawVersion();
+      this.retryButton.draw(this.ctx);
     }
   }
 
@@ -1569,7 +1593,7 @@ class Game {
 
     // Level text
     ctx.fillStyle = COLORS.TEXT;
-    ctx.font = FONT.LARGE.full;
+    ctx.font = FONT.SMALL.full;
     ctx.textAlign = "center";
     ctx.fillText(
       `${LEVELS[this.levelManager.currentLevel].name}`,
