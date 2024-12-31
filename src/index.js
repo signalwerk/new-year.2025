@@ -51,7 +51,7 @@ const TEXTS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.8,
+  levelVersion: 1.9,
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 0, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
@@ -895,6 +895,8 @@ class LevelManager {
     this.levelStartTime = 0;
     this.remainingMeteors = [];
     this.allMeteorsSpawned = false;
+    this.pauseStartTime = 0; // Add new property to track pause time
+    this.totalPausedTime = 0; // Add new property to track total paused time
   }
 
   startLevel(levelIndex) {
@@ -902,12 +904,14 @@ class LevelManager {
     this.levelStartTime = performance.now();
     this.remainingMeteors = [...LEVELS[levelIndex].meteors];
     this.allMeteorsSpawned = false;
+    this.totalPausedTime = 0; // Reset paused time when starting new level
   }
 
   update(currentTime, meteors) {
     if (this.currentLevel >= LEVELS.length) return false;
 
-    const levelTime = currentTime - this.levelStartTime;
+    // Adjust level time by subtracting total paused time
+    const levelTime = currentTime - this.levelStartTime - this.totalPausedTime;
     const level = LEVELS[this.currentLevel];
 
     // Check if level time is exceeded
@@ -938,9 +942,28 @@ class LevelManager {
   }
 
   getLevelProgress() {
-    const levelTime = performance.now() - this.levelStartTime;
+    const currentTime = performance.now();
+    let adjustedTime = currentTime - this.levelStartTime - this.totalPausedTime;
+    // If currently paused, also subtract the current pause duration
+    if (this.pauseStartTime) {
+      adjustedTime -= currentTime - this.pauseStartTime;
+    }
     const duration = LEVELS[this.currentLevel].duration;
-    return Math.min(levelTime / duration, 1);
+    return Math.min(adjustedTime / duration, 1);
+  }
+
+  // Add new methods to handle pausing
+  pause() {
+    if (!this.pauseStartTime) {
+      this.pauseStartTime = performance.now();
+    }
+  }
+
+  resume() {
+    if (this.pauseStartTime) {
+      this.totalPausedTime += performance.now() - this.pauseStartTime;
+      this.pauseStartTime = 0;
+    }
   }
 }
 
@@ -1258,61 +1281,64 @@ class Game {
   }
 
   update(deltaTime) {
-    if (this.gameState !== GAME_STATES.PLAYING) return;
+    if (this.gameState === GAME_STATES.PLAYING) {
+      const currentTime = performance.now();
 
-    const currentTime = performance.now();
-
-    // Update all defense spots
-    for (let row = 0; row < this.defenseGrid.length; row++) {
-      for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
-        this.defenseGrid[row][lane].update(
-          currentTime,
-          this.meteors,
-          this.coins,
-        );
-      }
-    }
-
-    // Update meteors and check for lives
-    this.meteors = this.meteors.filter((meteor) => {
-      meteor.update(deltaTime);
-      if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
-        this.lives--;
-        if (this.lives <= 0) {
-          // Update high score when game ends
-          if (this.currentScore > this.highScore) {
-            this.highScore = this.currentScore;
-            this.saveHighScore();
-          }
-          // Update level high score when game ends
-          if (this.levelManager.currentLevel > this.levelHighScore) {
-            this.levelHighScore = this.levelManager.currentLevel;
-            this.saveLevelHighScore();
-          }
-          this.gameState = GAME_STATES.GAME_OVER;
-        } else {
-          this.gameState = GAME_STATES.LIFE_LOST;
+      // Update all defense spots
+      for (let row = 0; row < this.defenseGrid.length; row++) {
+        for (let lane = 0; lane < this.defenseGrid[row].length; lane++) {
+          this.defenseGrid[row][lane].update(
+            currentTime,
+            this.meteors,
+            this.coins,
+          );
         }
-        return false;
       }
-      return true;
-    });
 
-    // Update coins
-    this.coins = this.coins.filter((coin) => {
-      return coin.update(currentTime);
-    });
+      // Update meteors and check for lives
+      this.meteors = this.meteors.filter((meteor) => {
+        meteor.update(deltaTime);
+        if (meteor.y >= GAME_HEIGHT - PADDING_BOTTOM) {
+          this.lives--;
+          if (this.lives <= 0) {
+            // Update high score when game ends
+            if (this.currentScore > this.highScore) {
+              this.highScore = this.currentScore;
+              this.saveHighScore();
+            }
+            // Update level high score when game ends
+            if (this.levelManager.currentLevel > this.levelHighScore) {
+              this.levelHighScore = this.levelManager.currentLevel;
+              this.saveLevelHighScore();
+            }
+            this.gameState = GAME_STATES.GAME_OVER;
+          } else {
+            this.gameState = GAME_STATES.LIFE_LOST;
+          }
+          return false;
+        }
+        return true;
+      });
 
-    // Update level manager
-    this.levelManager.update(currentTime, this.meteors);
+      // Update coins
+      this.coins = this.coins.filter((coin) => {
+        return coin.update(currentTime);
+      });
 
-    // Check for level completion
-    if (this.levelManager.isLevelComplete(this.meteors)) {
-      if (this.levelManager.currentLevel >= LEVELS.length - 1) {
-        this.gameState = GAME_STATES.GAME_COMPLETE;
-      } else {
-        this.gameState = GAME_STATES.LEVEL_COMPLETE;
+      // Update level manager
+      this.levelManager.update(currentTime, this.meteors);
+
+      // Check for level completion
+      if (this.levelManager.isLevelComplete(this.meteors)) {
+        if (this.levelManager.currentLevel >= LEVELS.length - 1) {
+          this.gameState = GAME_STATES.GAME_COMPLETE;
+        } else {
+          this.gameState = GAME_STATES.LEVEL_COMPLETE;
+        }
       }
+    } else if (this.gameState === GAME_STATES.LIFE_LOST) {
+      // Pause the level timer
+      this.levelManager.pause();
     }
   }
 
@@ -1631,8 +1657,9 @@ class Game {
   // Add new method to continue playing
   continuePlaying() {
     this.gameState = GAME_STATES.PLAYING;
-    // Clear any remaining meteors to give player a fresh start
     this.meteors = [];
+    // Resume the level timer
+    this.levelManager.resume();
   }
 
   // Add after constructor
