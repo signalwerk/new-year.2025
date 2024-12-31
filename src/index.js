@@ -283,6 +283,7 @@ const ASSETS = {
     "/assets/img/meteor-2.png",
     "/assets/img/meteor-3.png",
   ],
+  BACKGROUND: "/assets/img/bg.png", // Add background image
 };
 
 // Add new AssetLoader class
@@ -298,8 +299,11 @@ class AssetLoader {
       this.loadImage(`meteor-${index}`, path),
     );
 
+    // Add background loading
+    const backgroundPromise = this.loadImage("background", ASSETS.BACKGROUND);
+
     try {
-      await Promise.all(meteorPromises);
+      await Promise.all([...meteorPromises, backgroundPromise]);
       return true;
     } catch (error) {
       console.error("Error loading assets:", error);
@@ -1188,9 +1192,18 @@ class Game {
   }
 
   drawBackground() {
-    // Fill entire canvas with background color first
-    this.ctx.fillStyle = COLORS.BACKGROUND;
-    this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    // Draw background image
+    const bgImage = this.assetLoader.getImage("background");
+    if (bgImage) {
+      // Draw the image covering the full canvas, before anything else
+      this.ctx.fillStyle = "#000"; // Add black background to prevent any transparency
+      this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      this.ctx.drawImage(bgImage, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+    } else {
+      // Fallback to solid color if image not loaded
+      this.ctx.fillStyle = COLORS.BACKGROUND;
+      this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    }
 
     // Draw game area border
     this.ctx.strokeStyle = COLORS.BORDER;
@@ -1213,14 +1226,14 @@ class Game {
     // Draw padding areas (slightly darker shade for visual separation)
     this.ctx.fillStyle = COLORS.BACKGROUND;
     // Top padding
-    this.ctx.fillRect(0, 0, GAME_WIDTH, PADDING_TOP);
+    // this.ctx.fillRect(0, 0, GAME_WIDTH, PADDING_TOP);
     // Bottom padding
-    this.ctx.fillRect(
-      0,
-      GAME_HEIGHT - PADDING_BOTTOM,
-      GAME_WIDTH,
-      PADDING_BOTTOM,
-    );
+    // this.ctx.fillRect(
+    //   0,
+    //   GAME_HEIGHT - PADDING_BOTTOM,
+    //   GAME_WIDTH,
+    //   PADDING_BOTTOM,
+    // );
     // Left padding
     this.ctx.fillRect(0, PADDING_TOP, PADDING_LEFT, this.gameAreaHeight);
     // Right padding

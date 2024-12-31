@@ -25,5 +25,12 @@ crop_image "image-map.png" "meteor-3.png" 350 150 200 400
 # Crop the third image
 crop_image "image-map.png" "meteor-1.png" 550 150 200 200
 
+
+
+crop_image "image-map.png" "defense-1.png" 150 550 200 200
+crop_image "image-map.png" "defense-2.png" 350 550 200 200
+crop_image "image-map.png" "defense-3.png" 550 550 200 200
+
+
 # optimize images
 optipng -o7 -strip all ./public/assets/img/*
