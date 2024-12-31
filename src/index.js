@@ -37,8 +37,8 @@ const COLORS = {
   GRID_LINE: "rgba(0,0,0,0.25)",
   DEBUG_TEXT: "#666",
   SELECTION: "rgba(255,80,80,0.7)",
-  HEART_FILL: "#d05377",
-  HEART_STROKE: "#c14e6f",
+  HEART_FILL: "#c0aa9a",
+  HEART_STROKE: "#c0aa9a",
 };
 
 const TEXTS = {
@@ -51,7 +51,7 @@ const TEXTS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: "1.8.1",
+  levelVersion: "1.8.2",
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 0, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
@@ -276,18 +276,25 @@ const METEOR_TYPES = [
 const FONT = {
   SMALL: {
     size: "12px",
-    family: "Arial",
+    family: "GameText",
     get full() {
       return `${this.size} ${this.family}`;
     },
   },
   LARGE: {
     size: "14px",
-    family: "Arial",
+    family: "GameText",
     get full() {
       return `${this.size} ${this.family}`;
     },
   },
+  TITLE: {
+    size: "24px",
+    family: "GameTitle",
+    get full() {
+      return `${this.size} ${this.family}`;
+    },
+  }
 };
 
 // Add at the top of the file, after other constants
@@ -303,12 +310,17 @@ const ASSETS = {
     "/assets/img/defense-3.png",
   ],
   BACKGROUND: "/assets/img/bg.png",
+  FONTS: {
+    TITLE: "/assets/fonts/pilowlava/Fonts/webfonts/Pilowlava-Regular.woff2",
+    TEXT: "/assets/fonts/space-mono/SpaceMono-Regular.ttf"
+  }
 };
 
 // Add new AssetLoader class
 class AssetLoader {
   constructor() {
     this.images = new Map();
+    this.fonts = new Map();
     this.totalAssets = 0;
     this.loadedAssets = 0;
   }
@@ -324,11 +336,18 @@ class AssetLoader {
 
     const backgroundPromise = this.loadImage("background", ASSETS.BACKGROUND);
 
+    // Add font loading
+    const fontPromises = [
+      this.loadFont("GameTitle", ASSETS.FONTS.TITLE),
+      this.loadFont("GameText", ASSETS.FONTS.TEXT)
+    ];
+
     try {
       await Promise.all([
         ...meteorPromises,
         ...defensePromises,
         backgroundPromise,
+        ...fontPromises,
       ]);
       return true;
     } catch (error) {
@@ -362,6 +381,24 @@ class AssetLoader {
 
   getLoadingProgress() {
     return this.totalAssets ? this.loadedAssets / this.totalAssets : 0;
+  }
+
+  // Add new loadFont method
+  async loadFont(fontFamily, url) {
+    this.totalAssets++;
+    
+    const fontFace = new FontFace(fontFamily, `url(${url})`);
+    
+    try {
+      const loadedFont = await fontFace.load();
+      document.fonts.add(loadedFont);
+      this.fonts.set(fontFamily, loadedFont);
+      this.loadedAssets++;
+      return loadedFont;
+    } catch (error) {
+      console.error(`Failed to load font: ${url}`, error);
+      throw error;
+    }
   }
 }
 
@@ -1194,6 +1231,7 @@ class Game {
       } else if (this.gameState === GAME_STATES.LIFE_LOST) {
         if (this.continueButton.isClicked(x, y)) {
           this.continuePlaying();
+          this.currency += 120;
         }
       }
     });
@@ -1675,9 +1713,13 @@ class Game {
   // Add new method to draw version
   drawVersion() {
     this.ctx.fillStyle = COLORS.TEXT;
-    this.ctx.font = "11px Arial"; // Smaller font size
-    this.ctx.textAlign = "left";
-    this.ctx.fillText(`v${LEVEL_GEN_CONFIG.levelVersion}`, 5, GAME_HEIGHT - 5); // Position in bottom left corner
+    this.ctx.font = "10px Arial"; // Smaller font size
+    this.ctx.textAlign = "right";
+    this.ctx.fillText(
+      `v${LEVEL_GEN_CONFIG.levelVersion}`,
+      GAME_WIDTH - 5,
+      GAME_HEIGHT - 5,
+    ); // Position in bottom left corner
   }
 
   // Add new method to load level high score
