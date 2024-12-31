@@ -51,7 +51,7 @@ const TEXTS = {
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: 1.9,
+  levelVersion: "1.8.1",
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 0, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
