@@ -20,17 +20,17 @@ const METEOR_SIZE = LANE_WIDTH * 0.8; // Base size for meteors
 const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
 
 // Add to game constants
-const DEBUG = true; // Toggle for development visualization
+const DEBUG = false; // Toggle for development visualization
 
 const COLORS = {
   BACKGROUND: "#edf1e7",
-  TEXT: "#000",
-  DEFENSE_OPTION_TEXT: "#000",
+  TEXT: "#c0aa9a",
+  DEFENSE_OPTION_TEXT: "#c0aa9a",
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
   BUTTON: "#444",
   BUTTON_TEXT: "#fff",
   PROGRESS_BAR: "#3e737a",
-  PROGRESS_BORDER: "#6e708d",
+  PROGRESS_BORDER: "#c0aa9a",
   DEFENSE_BACKGROUND: "rgba(255,255,255,0.2)",
   BORDER: "#333",
   DEBUG_LINE: "rgba(0,0,0,0.1)",
