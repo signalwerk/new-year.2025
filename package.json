@@ -7,7 +7,7 @@
     "start": "parcel src/index.html",
     "clear": "rm -rf ./dist/ && rm -rf .parcel-cache",
     "build": "npm run clear && npm run build:all && npm run rename && npm run build:post",
-    "rename": "mv docs/game/neo/indexNeo.html docs/game/neo/index.html && mv docs/luan/indexLuan.html docs/luan/index.html",
+    "rename": "mv dist/game/neo/neo.html dist/game/neo/index.html && mv dist/luan/luan.html dist/luan/index.html",
     "build:all": "npm run build:dev && npm run build:neo && npm run build:luan",
     "build:dev": "parcel build --target dev",
     "build:neo": "parcel build --target neo",
