@@ -33,7 +33,7 @@ const LETTER_SPACING = "0.05em";
 const DEBUG = false; // Toggle for development visualization
 
 const COLORS = {
-  BACKGROUND: "#edf1e7",
+  BACKGROUND: "#000",
   TEXT: "#c0aa9a",
   DEFENSE_OPTION_TEXT: "#c0aa9a",
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
@@ -1116,48 +1116,14 @@ class Game {
     this.initializeCanvas();
     window.addEventListener("resize", () => this.initializeCanvas());
 
-    // Load assets before starting the game
-    this.loadAssets();
+    // Initialize other game properties
+    this.initializeGameProperties();
 
-    // Start game loop
+    // Start game loop immediately
     requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
 
-    // Add test meteor in middle lane
-    this.testMeteor = new Meteor(2); // Lane 3 (0-based index)
-
-    // Add game state and button handling
-    this.gameState = GAME_STATES.MENU;
-    this.setupEventListeners();
-
-    // Create buttons
-    this.startButton = new Button(TEXTS.START_GAME);
-    this.retryButton = new Button(TEXTS.TRY_AGAIN);
-
-    // Initialize currency and defense options
-    this.currency = INITIAL_CURRENCY;
-    this.defenseOptions = this.createDefenseOptions();
-    this.selectedDefense = null;
-
-    // Initialize the defense grid
-    this.defenseGrid = this.createDefenseGrid();
-
-    this.levelManager = new LevelManager();
-
-    // Add new buttons
-    this.nextLevelButton = new Button(TEXTS.NEXT_LEVEL);
-
-    // Add new continue button
-    this.continueButton = new Button(TEXTS.CONTINUE);
-
-    // Add lives property
-    this.lives = INITIAL_LIVES;
-
-    // Add high score properties
-    this.currentScore = 0;
-    this.highScore = this.loadHighScore();
-
-    // Add level high score property
-    this.levelHighScore = this.loadLevelHighScore();
+    // Load assets separately
+    this.loadAssets();
   }
 
   initializeCanvas() {
@@ -1316,6 +1282,7 @@ class Game {
     if (DEBUG) {
       this.ctx.fillStyle = "#666";
       this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
       return;
     }
 
@@ -1323,7 +1290,7 @@ class Game {
     const bgImage = this.assetLoader.getImage("background");
     if (bgImage) {
       // Draw the image covering the full canvas, before anything else
-      this.ctx.fillStyle = "#000"; // Add black background to prevent any transparency
+      this.ctx.fillStyle = COLORS.BACKGROUND; // Add black background to prevent any transparency
       this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
       this.ctx.drawImage(bgImage, 0, 0, GAME_WIDTH, GAME_HEIGHT);
     } else {
@@ -1611,34 +1578,42 @@ ${TEXTS.HIGH_SCORE}: ${this.highScore} (${TEXTS.LEVEL} ${
   }
 
   async loadAssets() {
-    const success = await this.assetLoader.loadAll();
-    if (success) {
-      this.gameState = GAME_STATES.MENU;
-    } else {
-      console.error("Failed to load assets");
-      // You might want to show an error message to the user
+    try {
+      const success = await this.assetLoader.loadAll();
+      if (success) {
+        this.gameState = GAME_STATES.MENU;
+      } else {
+        console.error("Failed to load assets");
+      }
+    } catch (error) {
+      console.error("Error loading assets:", error);
     }
   }
 
   drawLoadingScreen() {
     const progress = this.assetLoader.getLoadingProgress();
 
+    // draw black background
+    this.ctx.fillStyle = COLORS.BACKGROUND;
+    this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
     // Draw loading bar
-    const barWidth = 200;
-    const barHeight = 20;
-    const x = (GAME_WIDTH - barWidth) / 2;
+    const barWidth = GAME_WIDTH - PADDING_LEFT - PADDING_RIGHT; // Leave some padding
+    const barHeight = UNIT * 20;
+    const x = PADDING_LEFT;
     const y = GAME_HEIGHT / 2;
 
     // Background
-    this.ctx.fillStyle = COLORS.BUTTON;
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
     this.ctx.fillRect(x, y, barWidth, barHeight);
 
     // Progress
-    this.ctx.fillStyle = "#4CAF50";
+    this.ctx.fillStyle = COLORS.PROGRESS_BAR;
     this.ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     // Border
-    this.ctx.strokeStyle = COLORS.TEXT;
+    this.ctx.strokeStyle = COLORS.PROGRESS_BORDER;
+    this.ctx.lineWidth = UNIT * 2;
     this.ctx.strokeRect(x, y, barWidth, barHeight);
 
     // Loading text
@@ -1755,6 +1730,41 @@ ${TEXTS.HIGH_SCORE}: ${this.highScore} (${TEXTS.LEVEL} ${
       STORAGE_KEY + "_level",
       this.levelHighScore.toString(),
     );
+  }
+
+  // Move initialization code to separate method
+  initializeGameProperties() {
+    // Create buttons
+    this.startButton = new Button(TEXTS.START_GAME);
+    this.retryButton = new Button(TEXTS.TRY_AGAIN);
+
+    // Initialize currency and defense options
+    this.currency = INITIAL_CURRENCY;
+    this.defenseOptions = this.createDefenseOptions();
+    this.selectedDefense = null;
+
+    // Initialize the defense grid
+    this.defenseGrid = this.createDefenseGrid();
+
+    this.levelManager = new LevelManager();
+
+    // Add new buttons
+    this.nextLevelButton = new Button(TEXTS.NEXT_LEVEL);
+
+    // Add new continue button
+    this.continueButton = new Button(TEXTS.CONTINUE);
+
+    // Add lives property
+    this.lives = INITIAL_LIVES;
+
+    // Add high score properties
+    this.currentScore = 0;
+    this.highScore = this.loadHighScore();
+
+    // Add level high score property
+    this.levelHighScore = this.loadLevelHighScore();
+
+    this.setupEventListeners();
   }
 }
 
