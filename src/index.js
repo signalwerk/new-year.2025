@@ -27,6 +27,7 @@ const LANE_WIDTH = GAME_AREA_WIDTH / LANES; // Width of each lane
 const SPOT_SIZE = LANE_WIDTH; // Defense spots are same width as lanes
 const METEOR_SIZE = LANE_WIDTH * 0.8; // Base size for meteors
 const GRID_ROWS = Math.floor(GAME_AREA_HEIGHT / SPOT_SIZE);
+const LETTER_SPACING = "0.05em";
 
 // Add to game constants
 const DEBUG = false; // Toggle for development visualization
@@ -48,14 +49,24 @@ const COLORS = {
   SELECTION: "rgba(255,80,80,0.7)",
   HEART_FILL: "#c0aa9a",
   HEART_STROKE: "#c0aa9a",
+  GAME_OVER_COLOR: "#FF4444",
+  SUCCESS_COLOR: "#15861a",
 };
 
 const TEXTS = {
+  TITLE: TXT?.TITLE || "Willkommen!",
+  INTRO: TXT?.INTRO || "",
   LIVES: "Leben:",
   LEVEL: "Level",
   SCORE: "Punkte",
   COINS: "Coins:",
   CURRENCY: "Geld:",
+  HIGH_SCORORE: "Rekord",
+  GAME_COMPLETE: "Geschafft!",
+  GAME_OVER: "Game Over!",
+  GAME_COMPLETE: "Level Complete!",
+  LIFE_LOST: "Life Lost!",
+  LIFE_REMAINING: (lives) => `noch ${lives} ${lives === 1 ? "Leben" : "Leben"}`,
 };
 
 // Level generation configuration options
@@ -499,7 +510,7 @@ class Meteor {
 
     if (DEBUG) {
       // Draw collision circle
-      ctx.strokeStyle = "rgba(255,0,0,0.3)";
+      ctx.strokeStyle = "rgba(255,0,0,0.5)";
       ctx.beginPath();
       ctx.arc(wiggleX, this.y, 10, 0, Math.PI * 2);
       ctx.stroke();
@@ -555,7 +566,13 @@ class Button {
     ctx.font = FONT.LARGE.full;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(this.text, this.x + this.width / 2, this.y + this.height / 2);
+    ctx.letterSpacing = LETTER_SPACING;
+    ctx.fillText(
+      this.text,
+      this.x + this.width / 2,
+      this.y + this.height * 0.52,
+    );
+    ctx.letterSpacing = "0px";
   }
 }
 
@@ -592,7 +609,7 @@ class Projectile {
     const dx = this.x - meteorX;
     const dy = this.y - meteor.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    return distance < this.size + 10; // 10 is meteor radius
+    return distance < this.size + 10 * UNIT; // 10 is meteor radius
   }
 
   isOffScreen() {
@@ -762,11 +779,13 @@ class DefenseOption {
       : COLORS.DEFENSE_OPTION_TEXT;
     ctx.font = FONT.SMALL.full;
     ctx.textAlign = "center";
+    ctx.letterSpacing = LETTER_SPACING;
     ctx.fillText(
       `$${this.type.cost}`,
       this.x + SPOT_SIZE / 2,
       this.y + SPOT_SIZE + UNIT * 15,
     );
+    ctx.letterSpacing = "0px";
   }
 
   isClicked(clickX, clickY) {
@@ -906,7 +925,9 @@ class Coin {
     ctx.font = `${Math.max(10, this.size)}px ${FONT.SMALL.family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    ctx.letterSpacing = LETTER_SPACING;
     ctx.fillText(`${this.value}`, coinX, coinY + this.size / 8);
+    ctx.letterSpacing = "0px";
     ctx.globalAlpha = 1;
   }
 
@@ -1022,7 +1043,7 @@ const STORAGE_KEY = "meteorDefenseHighScore";
 
 // Add after other classes, before Game class
 class TextRenderer {
-  static drawTitle(ctx, text, color = COLORS.TEXT, subtitle = null) {
+  static drawTitle(ctx, { title, color = COLORS.TEXT, subtitle = null }) {
     const x = GAME_WIDTH / 2;
     const y = GAME_HEIGHT / 4;
     const lineHeight = FONT.TITLE.size * 1.5;
@@ -1033,16 +1054,18 @@ class TextRenderer {
     ctx.font = FONT.TITLE.full;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, x, y);
+    ctx.fillText(title, x, y);
 
     // Draw subtitle if provided
     if (subtitle) {
       ctx.font = FONT.LARGE.full;
+      ctx.letterSpacing = LETTER_SPACING;
       // Split subtitle into lines and render each one
       const subtitleLines = subtitle.split("\n");
       subtitleLines.forEach((line, index) => {
         ctx.fillText(line, x, y + lineHeight + index * subtitleLineHeight);
       });
+      ctx.letterSpacing = "0px";
     }
   }
 }
@@ -1094,8 +1117,6 @@ class Game {
     // Add new continue button
     this.continueButton = new Button("Continue");
 
-    this.lifeLostText = new Button("Life Lost!");
-
     // Add lives property
     this.lives = INITIAL_LIVES;
 
@@ -1105,10 +1126,6 @@ class Game {
 
     // Add level high score property
     this.levelHighScore = this.loadLevelHighScore();
-
-    // Remove the button-based text definitions and just store the colors
-    this.gameOverColor = "#FF4444";
-    this.successColor = "#4CAF50";
   }
 
   initializeCanvas() {
@@ -1361,12 +1378,20 @@ class Game {
     this.ctx.fillStyle = COLORS.TEXT;
     this.ctx.font = FONT.SMALL.full;
     this.ctx.textAlign = "center";
+    this.ctx.letterSpacing = LETTER_SPACING;
 
     // Draw currency centered below grid
     this.ctx.fillText(
       `${TEXTS.CURRENCY} $${this.currency}`,
       GAME_WIDTH / 2,
       currencyY,
+    );
+
+    // Level text centered below progress bar
+    this.ctx.fillText(
+      `${LEVELS[this.levelManager.currentLevel].name}`,
+      GAME_WIDTH / 2,
+      TEXT_TOP,
     );
 
     // Draw scores in top left corner
@@ -1377,11 +1402,7 @@ class Game {
       TEXT_TOP,
     );
 
-    // this.ctx.fillText(
-    //   `High Score: ${this.highScore}`,
-    //   PADDING_LEFT / 3,
-    //   (PADDING_TOP / 6) * 5,
-    // );
+    this.ctx.letterSpacing = "0px";
   }
 
   draw() {
@@ -1390,12 +1411,10 @@ class Game {
     if (this.gameState === GAME_STATES.LOADING) {
       this.drawLoadingScreen();
     } else if (this.gameState === GAME_STATES.MENU) {
-      TextRenderer.drawTitle(
-        this.ctx,
-        "HELLO!",
-        COLORS.TEXT,
-        "Welcome to the game!\nTwo words about the game.",
-      );
+      TextRenderer.drawTitle(this.ctx, {
+        title: TEXTS.TITLE,
+        subtitle: TEXTS.INTRO,
+      });
 
       this.startButton.draw(this.ctx);
       this.drawVersion();
@@ -1434,33 +1453,35 @@ class Game {
       this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
       this.ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-      TextRenderer.drawTitle(
-        this.ctx,
-        "Life Lost!",
-        this.gameOverColor,
-        `${this.lives} ${this.lives === 1 ? "life" : "lives"} remaining`,
-      );
+      TextRenderer.drawTitle(this.ctx, {
+        title: TEXTS.LIFE_LOST,
+        color: COLORS.GAME_OVER_COLOR,
+        subtitle: TEXTS.LIFE_REMAINING(this.lives),
+      });
 
       this.continueButton.draw(this.ctx);
     } else if (this.gameState === GAME_STATES.LEVEL_COMPLETE) {
-      TextRenderer.drawTitle(this.ctx, "Level Complete!", this.successColor);
+      TextRenderer.drawTitle(this.ctx, {
+        title: TEXTS.LEVEL_COMPLETE,
+        color: COLORS.SUCCESS_COLOR,
+      });
       this.nextLevelButton.draw(this.ctx);
     } else if (this.gameState === GAME_STATES.GAME_COMPLETE) {
-      TextRenderer.drawTitle(
-        this.ctx,
-        "Game Complete!",
-        this.successColor,
-        `Final Score: ${this.currentScore}`,
-      );
+      TextRenderer.drawTitle(this.ctx, {
+        title: TEXTS.GAME_COMPLETE,
+        color: COLORS.SUCCESS_COLOR,
+        subtitle: `${TEXTS.SCORE}: ${this.currentScore}
+${TEXTS.HIGH_SCORE}: ${this.highScore} (Level ${this.levelHighScore + 1})`,
+      });
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
-      TextRenderer.drawTitle(
-        this.ctx,
-        "Game Over!",
-        this.gameOverColor,
-        `Final Score: ${this.currentScore} (Level ${
+      TextRenderer.drawTitle(this.ctx, {
+        title: TEXTS.GAME_OVER,
+        color: COLORS.GAME_OVER_COLOR,
+        subtitle: `${TEXTS.SCORE}: ${this.currentScore} (Level ${
           this.levelManager.currentLevel + 1
-        })`,
-      );
+        })
+${TEXTS.HIGH_SCORE}: ${this.highScore} (Level ${this.levelHighScore + 1})`,
+      });
       this.retryButton.draw(this.ctx);
     }
   }
@@ -1534,16 +1555,6 @@ class Game {
     ctx.strokeStyle = COLORS.PROGRESS_BORDER;
     ctx.lineWidth = UNIT * 2;
     ctx.strokeRect(x, y, barWidth, barHeight);
-
-    // Level text
-    ctx.fillStyle = COLORS.TEXT;
-    ctx.font = FONT.SMALL.full;
-    ctx.textAlign = "center";
-    ctx.fillText(
-      `${LEVELS[this.levelManager.currentLevel].name}`,
-      GAME_WIDTH / 2,
-      TEXT_TOP,
-    );
 
     // Time remaining
     if (DEBUG) {
