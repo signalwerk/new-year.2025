@@ -54,9 +54,9 @@ const COLORS = {
 };
 
 const TEXTS = {
-  TITLE: TXT?.TITLE || "Meteor\nDefense",
-  SUB_TITLE: TXT?.SUB_TITLE || "Alles Gute im neuen Jahr!",
-  INTRO: TXT?.INTRO || "",
+  TITLE: window?.TXT?.TITLE || "Meteor\nDefense",
+  SUB_TITLE: window?.TXT?.SUB_TITLE || "Alles Gute im neuen Jahr!",
+  INTRO: window?.TXT?.INTRO || "",
   START_GAME: "Start!",
   TRY_AGAIN: "Neustart!",
   LIVES: "Leben:",

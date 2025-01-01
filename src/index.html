@@ -7,11 +7,13 @@
     <link rel="stylesheet" href="style.scss" />
 
     <script>
-      const TXT = {
-        TITLE: "",
-        SUB_TITLE: "Alles Gute im neuen Jahr!",
-        INTRO: ``,
-      };
+      if (window) {
+        window.TXT = {
+          TITLE: "",
+          SUB_TITLE: "Alles Gute im neuen Jahr!",
+          INTRO: ``,
+        };
+      }
     </script>
     <script type="module" src="./index.js"></script>
   </head>
