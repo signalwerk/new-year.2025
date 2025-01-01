@@ -14,7 +14,7 @@ const TEXT_TOP = PADDING_TOP + UNIT * 20;
 const INITIAL_CURRENCY = 500;
 const INITIAL_LIVES = 3;
 
-const BUTTON_WIDTH = GAME_WIDTH / 2;
+const BUTTON_WIDTH = (GAME_WIDTH / 5) * 3;
 const BUTTON_HEIGHT = BUTTON_WIDTH / 4;
 
 const BUTTON_X = GAME_WIDTH / 2 - BUTTON_WIDTH / 2;
@@ -37,7 +37,7 @@ const COLORS = {
   TEXT: "#c0aa9a",
   DEFENSE_OPTION_TEXT: "#c0aa9a",
   DEFENSE_OPTION_TEXT_INACTIVE: "#f00",
-  BUTTON: "#444",
+  BUTTON: "#5d908a",
   BUTTON_TEXT: "#fff",
   PROGRESS_BAR: "#c0aa9a",
   PROGRESS_BORDER: "#c0aa9a",
@@ -50,28 +50,33 @@ const COLORS = {
   HEART_FILL: "#c0aa9a",
   HEART_STROKE: "#c0aa9a",
   GAME_OVER_COLOR: "#FF4444",
-  SUCCESS_COLOR: "#15861a",
+  SUCCESS_COLOR: "#5c8e8b",
 };
 
 const TEXTS = {
-  TITLE: TXT?.TITLE || "Willkommen!",
+  TITLE: TXT?.TITLE || "Meteor\nDefense",
+  SUB_TITLE: TXT?.SUB_TITLE || "Alles Gute im neuen Jahr!",
   INTRO: TXT?.INTRO || "",
+  START_GAME: "Start!",
+  TRY_AGAIN: "Neustart!",
   LIVES: "Leben:",
   LEVEL: "Level",
   SCORE: "Punkte",
   COINS: "Coins:",
   CURRENCY: "Geld:",
-  HIGH_SCORORE: "Rekord",
-  GAME_COMPLETE: "Geschafft!",
+  HIGH_SCORE: "Rekord",
+  LEVEL_COMPLETE: "Geschafft!",
   GAME_OVER: "Game Over!",
-  GAME_COMPLETE: "Level Complete!",
-  LIFE_LOST: "Life Lost!",
+  GAME_COMPLETE: "Alle\nLevels\ngeschafft!",
+  LIFE_LOST: "Leben\nverloren!",
+  CONTINUE: "Weiter",
+  NEXT_LEVEL: "Nächstes Level",
   LIFE_REMAINING: (lives) => `noch ${lives} ${lives === 1 ? "Leben" : "Leben"}`,
 };
 
 // Level generation configuration options
 const LEVEL_GEN_CONFIG = {
-  levelVersion: "1.8.3",
+  levelVersion: "1.8.4",
   baseDuration: 30000, // Base duration in ms
   durationIncrease: 0, // How much to increase duration per level (15s)
   maxLevels: 30, // How many levels to generate
@@ -316,7 +321,7 @@ const FONT = {
     },
   },
   TITLE: {
-    size: UNIT * 36,
+    size: UNIT * 42,
     family: "GameTitle",
     get full() {
       return `${this.size}px ${this.family}`;
@@ -1043,27 +1048,54 @@ const STORAGE_KEY = "meteorDefenseHighScore";
 
 // Add after other classes, before Game class
 class TextRenderer {
-  static drawTitle(ctx, { title, color = COLORS.TEXT, subtitle = null }) {
+  static drawTitle(
+    ctx,
+    { title = "", color = COLORS.TEXT, subtitle = null, copy = null },
+  ) {
     const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT / 4;
-    const lineHeight = FONT.TITLE.size * 1.5;
+    const baseY = GAME_HEIGHT / 4;
+    const titleLineHeight = FONT.TITLE.size * 1.2;
     const subtitleLineHeight = FONT.LARGE.size * 1.3;
+    const copyLineHeight = FONT.SMALL.size * 1.35;
 
-    // Draw main title
+    // Split title into lines
+    const titleLines = title.split("\n");
+    // Calculate starting Y position that grows upward
+    const titleStartY = baseY - (titleLines.length - 1) * titleLineHeight;
+
+    // Draw main title lines
     ctx.fillStyle = color;
     ctx.font = FONT.TITLE.full;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(title, x, y);
+    titleLines.forEach((line, index) => {
+      ctx.fillText(line, x, titleStartY + index * titleLineHeight);
+    });
 
     // Draw subtitle if provided
     if (subtitle) {
+      ctx.fillStyle = COLORS.TEXT;
       ctx.font = FONT.LARGE.full;
       ctx.letterSpacing = LETTER_SPACING;
       // Split subtitle into lines and render each one
       const subtitleLines = subtitle.split("\n");
       subtitleLines.forEach((line, index) => {
-        ctx.fillText(line, x, y + lineHeight + index * subtitleLineHeight);
+        ctx.fillText(
+          line,
+          x,
+          baseY + titleLineHeight + index * subtitleLineHeight,
+        );
+      });
+      ctx.letterSpacing = "0px";
+    }
+    if (copy) {
+      ctx.fillStyle = COLORS.TEXT;
+      ctx.font = FONT.SMALL.full;
+      ctx.letterSpacing = LETTER_SPACING;
+      // Split copy into lines and render each one
+      const copyLines = copy.split("\n");
+      copyLines.forEach((line, index) => {
+        ctx.fillText(line, x, (GAME_HEIGHT / 5) * 3 + index * copyLineHeight);
       });
       ctx.letterSpacing = "0px";
     }
@@ -1098,8 +1130,8 @@ class Game {
     this.setupEventListeners();
 
     // Create buttons
-    this.startButton = new Button("Start Game");
-    this.retryButton = new Button("Try Again");
+    this.startButton = new Button(TEXTS.START_GAME);
+    this.retryButton = new Button(TEXTS.TRY_AGAIN);
 
     // Initialize currency and defense options
     this.currency = INITIAL_CURRENCY;
@@ -1112,10 +1144,10 @@ class Game {
     this.levelManager = new LevelManager();
 
     // Add new buttons
-    this.nextLevelButton = new Button("Next Level");
+    this.nextLevelButton = new Button(TEXTS.NEXT_LEVEL);
 
     // Add new continue button
-    this.continueButton = new Button("Continue");
+    this.continueButton = new Button(TEXTS.CONTINUE);
 
     // Add lives property
     this.lives = INITIAL_LIVES;
@@ -1413,7 +1445,9 @@ class Game {
     } else if (this.gameState === GAME_STATES.MENU) {
       TextRenderer.drawTitle(this.ctx, {
         title: TEXTS.TITLE,
-        subtitle: TEXTS.INTRO,
+        subtitle: TEXTS.SUB_TITLE,
+        copy: TEXTS.INTRO,
+        color: COLORS.GAME_OVER_COLOR,
       });
 
       this.startButton.draw(this.ctx);
@@ -1470,17 +1504,23 @@ class Game {
       TextRenderer.drawTitle(this.ctx, {
         title: TEXTS.GAME_COMPLETE,
         color: COLORS.SUCCESS_COLOR,
-        subtitle: `${TEXTS.SCORE}: ${this.currentScore}
-${TEXTS.HIGH_SCORE}: ${this.highScore} (Level ${this.levelHighScore + 1})`,
+        subtitle: `${TEXTS.SCORE}: ${this.currentScore} (${TEXTS.LEVEL} ${
+          this.levelManager.currentLevel + 1
+        })
+${TEXTS.HIGH_SCORE}: ${this.highScore} (${TEXTS.LEVEL} ${
+          this.levelHighScore + 1
+        })`,
       });
     } else if (this.gameState === GAME_STATES.GAME_OVER) {
       TextRenderer.drawTitle(this.ctx, {
         title: TEXTS.GAME_OVER,
         color: COLORS.GAME_OVER_COLOR,
-        subtitle: `${TEXTS.SCORE}: ${this.currentScore} (Level ${
+        subtitle: `${TEXTS.SCORE}: ${this.currentScore} (${TEXTS.LEVEL} ${
           this.levelManager.currentLevel + 1
         })
-${TEXTS.HIGH_SCORE}: ${this.highScore} (Level ${this.levelHighScore + 1})`,
+${TEXTS.HIGH_SCORE}: ${this.highScore} (${TEXTS.LEVEL} ${
+          this.levelHighScore + 1
+        })`,
       });
       this.retryButton.draw(this.ctx);
     }

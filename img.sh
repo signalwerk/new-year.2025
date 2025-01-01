@@ -1,6 +1,8 @@
 #!/bin/bash
 
-optipng -o7 -strip all "image-map.png"
+baseImage="./assets/image-map.png"
+
+optipng -o7 -strip all "$baseImage"
 
 # Function to crop an image
 crop_image() {
@@ -17,19 +19,19 @@ crop_image() {
 }
 
 # Crop the first image
-crop_image "image-map.png" "meteor-2.png" 150 150 200 400
+crop_image "$baseImage" "meteor-2.png" 150 150 200 400
 
 # Crop the second image
-crop_image "image-map.png" "meteor-3.png" 350 150 200 400
+crop_image "$baseImage" "meteor-3.png" 350 150 200 400
 
 # Crop the third image
-crop_image "image-map.png" "meteor-1.png" 550 150 200 200
+crop_image "$baseImage" "meteor-1.png" 550 150 200 200
 
 
 
-crop_image "image-map.png" "defense-3.png" 150 550 200 200
-crop_image "image-map.png" "defense-2.png" 350 550 200 200
-crop_image "image-map.png" "defense-1.png" 550 550 200 200
+crop_image "$baseImage" "defense-3.png" 150 550 200 200
+crop_image "$baseImage" "defense-2.png" 350 550 200 200
+crop_image "$baseImage" "defense-1.png" 550 550 200 200
 
 
 # optimize images

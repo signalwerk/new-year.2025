@@ -6,8 +6,12 @@
   "scripts": {
     "start": "parcel src/index.html",
     "clear": "rm -rf ./dist/ && rm -rf .parcel-cache",
-    "build": "npm run clear && npm run build:dev && npm run build:post",
+    "build": "npm run clear && npm run build:all && npm run rename && npm run build:post",
+    "rename": "mv docs/game/neo/indexNeo.html docs/game/neo/index.html && mv docs/luan/indexLuan.html docs/luan/index.html",
+    "build:all": "npm run build:dev && npm run build:neo && npm run build:luan",
     "build:dev": "parcel build --target dev",
+    "build:neo": "parcel build --target neo",
+    "build:luan": "parcel build --target luan",
     "build:post": "cp -a ./public/. ./dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +20,16 @@
     "dev": {
       "source": "src/index.html",
       "distDir": "./dist/dev/",
+      "publicUrl": "./"
+    },
+    "neo": {
+      "source": "src/neo.html",
+      "distDir": "./dist/game/neo/",
+      "publicUrl": "./"
+    },
+    "luan": {
+      "source": "src/luan.html",
+      "distDir": "./dist/luan/",
       "publicUrl": "./"
     }
   },
