@@ -301,28 +301,28 @@ const METEOR_TYPES = [
 const FONT = {
   TINY: {
     size: UNIT * 7,
-    family: "GameText",
+    family: "GameText, Arial, sans-serif",
     get full() {
       return `${this.size}px ${this.family}`;
     },
   },
   SMALL: {
     size: UNIT * 13,
-    family: "GameText",
+    family: "GameText, Arial, sans-serif",
     get full() {
       return `${this.size}px ${this.family}`;
     },
   },
   LARGE: {
     size: UNIT * 18,
-    family: "GameText",
+    family: "GameText, Arial, sans-serif",
     get full() {
       return `${this.size}px ${this.family}`;
     },
   },
   TITLE: {
     size: UNIT * 42,
-    family: "GameTitle",
+    family: "GameTitle, Arial, sans-serif",
     get full() {
       return `${this.size}px ${this.family}`;
     },
@@ -358,6 +358,12 @@ class AssetLoader {
   }
 
   async loadAll() {
+    // Add font loading
+    const fontPromises = [
+      this.loadFont("GameText", ASSETS.FONTS.TEXT),
+      this.loadFont("GameTitle", ASSETS.FONTS.TITLE),
+    ];
+
     const meteorPromises = ASSETS.METEORS.map((path, index) =>
       this.loadImage(`meteor-${index}`, path),
     );
@@ -368,18 +374,12 @@ class AssetLoader {
 
     const backgroundPromise = this.loadImage("background", ASSETS.BACKGROUND);
 
-    // Add font loading
-    const fontPromises = [
-      this.loadFont("GameTitle", ASSETS.FONTS.TITLE),
-      this.loadFont("GameText", ASSETS.FONTS.TEXT),
-    ];
-
     try {
       await Promise.all([
+        ...fontPromises,
         ...meteorPromises,
         ...defensePromises,
         backgroundPromise,
-        ...fontPromises,
       ]);
       return true;
     } catch (error) {
